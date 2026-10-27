@@ -32,9 +32,12 @@ public final class Analysis implements AutoCloseable {
 			storage = null;
 			return analysis;
 		} catch (final MalformedCASCStructureException e) {
+			final String version = GameInstall.readVersion(install);
 			throw new PackException(PackException.Kind.UNKNOWN_FORMAT,
-					"This game version stores files in a way this tool does not know yet (" + e.getMessage()
-							+ "). Nothing was written.",
+					(version == null ? "This game version" : "Game version " + version)
+							+ " stores its files in a way this tool can't read (" + e.getMessage()
+							+ "). The tool works with the current game version from the game launcher. "
+							+ "Nothing was written.",
 					e);
 		} catch (final IOException | RuntimeException e) {
 			throw new PackException(PackException.Kind.UNKNOWN_FORMAT,
@@ -57,6 +60,19 @@ public final class Analysis implements AutoCloseable {
 
 	public GameStorage getStorage() {
 		return this.storage;
+	}
+
+	public List<String> describeUnreadableNames() {
+		final List<String> names = this.storage.getUnreadableNames();
+		final List<String> lines = new ArrayList<>();
+		if (names.isEmpty()) {
+			return lines;
+		}
+		lines.add(names.size() + " listed files have names that are not valid text and were skipped, for example:");
+		for (int i = 0; i < Math.min(5, names.size()); i++) {
+			lines.add("  " + names.get(i));
+		}
+		return lines;
 	}
 
 	public String getLocale() {

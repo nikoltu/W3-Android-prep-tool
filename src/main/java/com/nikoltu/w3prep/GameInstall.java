@@ -105,6 +105,27 @@ public final class GameInstall {
 		}
 	}
 
+	public static String readVersion(final Path install) {
+		try {
+			final com.hiveworkshop.blizzard.casc.info.Info info = new com.hiveworkshop.blizzard.casc.info.Info(
+					java.nio.ByteBuffer.wrap(Files.readAllBytes(install.resolve(BUILD_INFO))));
+			final int versionField = info.getFieldIndex("Version");
+			final int activeField = info.getFieldIndex("Active");
+			if (versionField == -1) {
+				return null;
+			}
+			for (int record = 0; record < info.getRecordCount(); record++) {
+				if ((activeField == -1) || "1".equals(info.getField(record, activeField).trim())) {
+					final String version = info.getField(record, versionField);
+					return (version == null) || version.isEmpty() ? null : version;
+				}
+			}
+		} catch (final IOException | RuntimeException e) {
+			return null;
+		}
+		return null;
+	}
+
 	static boolean isInstall(final Path folder) {
 		return Files.isRegularFile(folder.resolve(BUILD_INFO)) && Files.isDirectory(folder.resolve(DATA));
 	}

@@ -2,8 +2,11 @@ package com.nikoltu.w3prep;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +21,7 @@ public final class CascGameStorage implements GameStorage {
 	private final String version;
 	private final Map<String, PathResult> results = new HashMap<>();
 	private boolean verifyBlocks = true;
+	private final List<String> unreadableNames = new ArrayList<>();
 
 	public CascGameStorage(final Path installFolder) throws IOException {
 		this.casc = new WarcraftIIICASC(installFolder, false);
@@ -43,11 +47,18 @@ public final class CascGameStorage implements GameStorage {
 		final List<PathResult> all = this.casc.getRootFileSystem().enumerateEntries();
 		final List<StorageEntry> entries = new ArrayList<>(all.size());
 		this.results.clear();
+		this.unreadableNames.clear();
 		for (final PathResult result : all) {
 			if (!result.isFile() || result.isTVFS()) {
 				continue;
 			}
-			final String path = result.getPath();
+			final String path;
+			try {
+				path = result.getPath();
+			} catch (final CharacterCodingException e) {
+				this.unreadableNames.add(lenientPath(result.getPathFragments()));
+				continue;
+			}
 			this.results.put(path, result);
 			entries.add(new StorageEntry(path, result.getFileSize(), result.existsInStorage()));
 		}
@@ -71,6 +82,19 @@ public final class CascGameStorage implements GameStorage {
 		final byte[] data = new byte[buffer.remaining()];
 		buffer.get(data);
 		return data;
+	}
+
+	static String lenientPath(final byte[][] fragments) {
+		final List<String> parts = new ArrayList<>(fragments.length);
+		for (final byte[] fragment : fragments) {
+			parts.add(new String(fragment, StandardCharsets.UTF_8));
+		}
+		return String.join("\\", parts);
+	}
+
+	@Override
+	public List<String> getUnreadableNames() {
+		return Collections.unmodifiableList(this.unreadableNames);
 	}
 
 	@Override

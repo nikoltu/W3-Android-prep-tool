@@ -92,6 +92,9 @@ public final class Cli {
 				long bytes = 0;
 				int files = 0;
 				log.info("game version " + analysis.getVersion() + " · language " + analysis.getLocale());
+				for (final String line : analysis.describeUnreadableNames()) {
+					log.info(line);
+				}
 				for (final PackPlan plan : plans) {
 					if (dryRun) {
 						for (final String line : PlanReport.lines(plan)) {

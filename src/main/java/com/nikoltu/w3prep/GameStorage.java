@@ -11,6 +11,10 @@ public interface GameStorage extends Closeable {
 
 	byte[] read(String path) throws IOException;
 
+	default List<String> getUnreadableNames() {
+		return java.util.Collections.emptyList();
+	}
+
 	default BlockCheck calibrate(final List<String> samplePaths) {
 		return BlockCheck.notAvailable();
 	}

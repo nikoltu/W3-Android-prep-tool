@@ -176,6 +176,9 @@ public final class MainWindow {
 					this.settings.setInstallFolder(install);
 					this.settings.save();
 					this.log.info("install " + install + ", version " + opened.getVersion() + ", language " + opened.getLocale());
+					for (final String line : opened.describeUnreadableNames()) {
+						this.log.info(line);
+					}
 					this.ready.showFound(install, opened.getVersion(), opened.getLocale());
 					updateSizes();
 					updateSummary();
