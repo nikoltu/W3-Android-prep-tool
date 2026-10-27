@@ -29,13 +29,13 @@ public final class Cli {
 			onlyCli &= "--cli".equals(arg);
 		}
 		if (!onlyCli) {
-			return runWith(args);
+			return runSafely(args);
 		}
 		System.out.println("W3 Data Packer " + AppInfo.fullVersion());
 		System.out.println("No options given, so this only shows what would be packed and writes nothing.");
 		System.out.println("Run it from a command prompt with --help to see all options.");
 		System.out.println();
-		final int code = runWith(new String[] { "--dry-run" });
+		final int code = runSafely(new String[] { "--dry-run" });
 		System.out.println();
 		System.out.println("Press Enter to close.");
 		try {
@@ -44,6 +44,20 @@ public final class Cli {
 			return code;
 		}
 		return code;
+	}
+
+	private static int runSafely(final String[] args) {
+		try {
+			return runWith(args);
+		} catch (final RuntimeException | Error e) {
+			final AppLog log = AppLog.open(false);
+			log.error("unexpected error", e);
+			System.err.println("Unexpected error: " + e);
+			if (log.getFile() != null) {
+				System.err.println("Details are in " + log.getFile());
+			}
+			return 9;
+		}
 	}
 
 	private static int runWith(final String[] args) {

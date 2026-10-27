@@ -5,6 +5,7 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Collections;
 
 import com.hiveworkshop.blizzard.casc.Key;
@@ -128,6 +129,16 @@ public class IndexFile {
 		});
 
 		return index >= 0 ? entries.get(index) : null;
+	}
+
+	public List<IndexEntry> getEntries(final Key encodingKey) {
+		final List<IndexEntry> matches = new ArrayList<>();
+		for (final IndexEntry entry : entries) {
+			if (entry.getKey().compareTo(encodingKey) == 0) {
+				matches.add(entry);
+			}
+		}
+		return matches;
 	}
 
 	public IndexEntry getEntry(final int index) {

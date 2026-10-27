@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.hiveworkshop.blizzard.casc.Key;
@@ -52,6 +53,10 @@ public class Storage implements AutoCloseable {
 	private final IndexFile[] indicies = new IndexFile[INDEX_COUNT];
 
 	private final long[] idxVersions = new long[INDEX_COUNT];
+
+	private final List<List<Path>> olderIndexPaths = new ArrayList<>();
+
+	private final Map<Path, IndexFile> olderIndexFiles = new HashMap<>();
 
 	private boolean closed = false;
 
@@ -115,6 +120,11 @@ public class Storage implements AutoCloseable {
 			final IndexFileNameMeta fileMeta = bucketList.get(0);
 			idxVersions[index] = fileMeta.version;
 			indicies[index] = new IndexFile(loadFileFully(fileMeta.filePath));
+			final List<Path> older = new ArrayList<>();
+			for (int copy = 1; copy < bucketList.size(); copy += 1) {
+				older.add(bucketList.get(copy).filePath);
+			}
+			olderIndexPaths.add(older);
 		}
 
 		int index = 0;
@@ -169,6 +179,31 @@ public class Storage implements AutoCloseable {
 			throw new FileNotFoundException("encoding key not in store indicies");
 		}
 
+		try {
+			return openBanks(index, indexEntry);
+		} catch (final MalformedCASCStructureException e) {
+			final List<IndexFile> candidates = new ArrayList<>();
+			candidates.add(index);
+			for (final Path olderPath : olderIndexPaths.get(bucketIndex)) {
+				candidates.add(loadOlderIndex(olderPath));
+			}
+			for (final IndexFile candidate : candidates) {
+				for (final IndexEntry entry : candidate.getEntries(encodingKey)) {
+					if ((candidate == index) && (entry == indexEntry)) {
+						continue;
+					}
+					try {
+						return openBanks(candidate, entry);
+					} catch (final MalformedCASCStructureException | EOFException again) {
+						continue;
+					}
+				}
+			}
+			throw e;
+		}
+	}
+
+	private BankStream openBanks(final IndexFile index, final IndexEntry indexEntry) throws IOException {
 		final long dataOffset = indexEntry.getDataOffset();
 		final int storeIndex = index.getStoreIndex(dataOffset);
 		final long storeOffset = index.getStoreOffset(dataOffset);
@@ -176,6 +211,15 @@ public class Storage implements AutoCloseable {
 		final ByteBuffer storageBuffer = getStorageBuffer(storeIndex, storeOffset, indexEntry.getFileSize());
 
 		return new BankStream(storageBuffer, indexEntry.getKey());
+	}
+
+	private synchronized IndexFile loadOlderIndex(final Path path) throws IOException {
+		IndexFile older = olderIndexFiles.get(path);
+		if (older == null) {
+			older = new IndexFile(loadFileFully(path));
+			olderIndexFiles.put(path, older);
+		}
+		return older;
 	}
 
 	private synchronized FileChannel getDataFileChannel(final int index) throws IOException {
