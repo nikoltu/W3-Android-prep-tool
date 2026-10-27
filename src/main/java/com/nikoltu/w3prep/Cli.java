@@ -13,7 +13,7 @@ public final class Cli {
 	}
 
 	static final String USAGE = String.join(System.lineSeparator(),
-			"W3 Data Packer " + AppInfo.version() + ", command line", "",
+			"W3 Data Packer " + AppInfo.fullVersion() + ", command line", "",
 			"  --install <folder>   game install folder (default: found automatically)",
 			"  --out <folder>       where packages go (default: Downloads)",
 			"  --melee              melee only, no campaign files", "  --movies             include movies",
@@ -24,6 +24,29 @@ public final class Cli {
 			"For use with your own legal copy only. Do not share the extracted files.");
 
 	public static int run(final String[] args) {
+		boolean onlyCli = true;
+		for (final String arg : args) {
+			onlyCli &= "--cli".equals(arg);
+		}
+		if (!onlyCli) {
+			return runWith(args);
+		}
+		System.out.println("W3 Data Packer " + AppInfo.fullVersion());
+		System.out.println("No options given, so this only shows what would be packed and writes nothing.");
+		System.out.println("Run it from a command prompt with --help to see all options.");
+		System.out.println();
+		final int code = runWith(new String[] { "--dry-run" });
+		System.out.println();
+		System.out.println("Press Enter to close.");
+		try {
+			System.in.read();
+		} catch (final IOException e) {
+			return code;
+		}
+		return code;
+	}
+
+	private static int runWith(final String[] args) {
 		Path install = null;
 		Path out = null;
 		PackOptions.Content content = PackOptions.Content.FULL_CLASSIC;

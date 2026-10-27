@@ -57,10 +57,13 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
+def buildId = (System.getenv('GITHUB_SHA') ?: 'local').take(7)
+
 tasks.named('processResources') {
     inputs.property('version', packerVersion)
+    inputs.property('build', buildId)
     filesMatching('datapacker/version.properties') {
-        expand(version: packerVersion)
+        expand(version: packerVersion, build: buildId)
     }
 }
 

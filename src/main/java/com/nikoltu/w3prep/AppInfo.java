@@ -10,6 +10,7 @@ import java.util.Properties;
 public final class AppInfo {
 	public static final String NAME = "W3 Data Packer";
 	private static String version;
+	private static String build;
 
 	private AppInfo() {
 	}
@@ -17,16 +18,24 @@ public final class AppInfo {
 	public static synchronized String version() {
 		if (version == null) {
 			version = "dev";
+			build = "local";
 			try (InputStream in = AppInfo.class.getResourceAsStream("/datapacker/version.properties")) {
 				if (in != null) {
 					final Properties properties = new Properties();
 					properties.load(in);
 					version = properties.getProperty("version", "dev");
+					build = properties.getProperty("build", "local");
 				}
 			} catch (final IOException e) {
+				return version;
 			}
 		}
 		return version;
+	}
+
+	public static String fullVersion() {
+		final String plain = version();
+		return plain + " (" + build + ")";
 	}
 
 	public static Path dataFolder() {

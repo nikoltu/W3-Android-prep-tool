@@ -42,7 +42,7 @@ public final class Analysis implements AutoCloseable {
 		} catch (final IOException | RuntimeException e) {
 			throw new PackException(PackException.Kind.UNKNOWN_FORMAT,
 					"The game's storage could not be read (" + e.getClass().getSimpleName()
-							+ (e.getMessage() == null ? "" : ": " + e.getMessage()) + "). Nothing was written.",
+							+ (e.getMessage() == null ? "" : ": " + e.getMessage()) + where(e) + "). Nothing was written.",
 					e);
 		} finally {
 			if (storage != null) {
@@ -52,6 +52,17 @@ public final class Analysis implements AutoCloseable {
 				}
 			}
 		}
+	}
+
+	static String where(final Throwable error) {
+		for (final StackTraceElement frame : error.getStackTrace()) {
+			if (frame.getClassName().startsWith("com.hiveworkshop") || frame.getClassName().startsWith("com.nikoltu")) {
+				final String name = frame.getClassName();
+				return " at " + name.substring(name.lastIndexOf('.') + 1) + "." + frame.getMethodName() + ":"
+						+ frame.getLineNumber();
+			}
+		}
+		return "";
 	}
 
 	public Path getInstall() {

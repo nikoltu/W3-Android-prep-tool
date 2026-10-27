@@ -48,7 +48,7 @@ public final class MainWindow {
 	private static final String FAILED = "failed";
 	private static final double ESTIMATED_BYTES_PER_SECOND = 55e6;
 
-	private final JFrame frame = new JFrame(AppInfo.NAME);
+	private final JFrame frame = new JFrame(AppInfo.NAME + " " + AppInfo.fullVersion());
 	private final CardLayout cards = new CardLayout();
 	private final JPanel screens = new JPanel(this.cards);
 	private final AppLog log = AppLog.open(false);
@@ -97,7 +97,8 @@ public final class MainWindow {
 			final MainWindow window = new MainWindow();
 			window.frame.setVisible(true);
 			window.show(READY);
-			window.log.info(AppInfo.NAME + " " + AppInfo.version() + " started");
+			window.log.info(AppInfo.NAME + " " + AppInfo.fullVersion() + " started on " + System.getProperty("os.name")
+					+ ", Java " + System.getProperty("java.version"));
 			window.findInstall();
 		});
 	}
@@ -368,7 +369,7 @@ public final class MainWindow {
 		}
 		this.worker = null;
 		this.progress = null;
-		this.frame.setTitle(AppInfo.NAME);
+		this.frame.setTitle(AppInfo.NAME + " " + AppInfo.fullVersion());
 		this.overlay.close();
 		if (this.exitAfterStop) {
 			exit();
