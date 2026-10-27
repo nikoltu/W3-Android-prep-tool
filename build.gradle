@@ -1,0 +1,173 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+def packerVersion = '0.1.0'
+def mainClassName = 'com.nikoltu.w3prep.Main'
+def appName = 'W3-DataPacker'
+
+group = 'com.nikoltu'
+version = packerVersion
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 17
+}
+
+dependencies {
+    implementation 'com.formdev:flatlaf:3.4.1'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.10.2'
+}
+
+application {
+    mainClass = mainClassName
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+tasks.named('processResources') {
+    inputs.property('version', packerVersion)
+    filesMatching('datapacker/version.properties') {
+        expand(version: packerVersion)
+    }
+}
+
+tasks.named('jar') {
+    archiveBaseName = 'w3-datapacker'
+    manifest {
+        attributes 'Main-Class': mainClassName,
+                'Implementation-Title': 'W3 Data Packer',
+                'Implementation-Version': packerVersion
+    }
+}
+
+def packageDir = layout.buildDirectory.dir('package').get().asFile
+def distDir = layout.buildDirectory.dir('distributions').get().asFile
+def jdkBin = "${System.getProperty('java.home')}/bin"
+def osName = System.getProperty('os.name').toLowerCase()
+def isWindows = osName.contains('windows')
+def isMac = osName.contains('mac')
+def osLabel = isWindows ? 'windows' : (isMac ? 'macos' : 'linux')
+def archLabel = ['aarch64', 'arm64'].contains(System.getProperty('os.arch')) ? 'arm64' : 'x64'
+def distName = "${appName}-${packerVersion}-${osLabel}-${archLabel}"
+def stageDir = "$packageDir/stage/$appName"
+
+def copyAppInput = tasks.register('copyAppInput', Sync) {
+    from tasks.named('jar')
+    from configurations.runtimeClasspath
+    into "$packageDir/input"
+}
+
+def jlinkRuntime = tasks.register('jlinkRuntime', Exec) {
+    outputs.dir "$packageDir/runtime"
+    doFirst { delete "$packageDir/runtime" }
+    commandLine "$jdkBin/jlink",
+            '--add-modules', 'java.base,java.desktop,java.logging',
+            '--strip-debug', '--no-header-files', '--no-man-pages',
+            '--output', "$packageDir/runtime"
+}
+
+def jpackageImage = tasks.register('jpackageImage', Exec) {
+    dependsOn copyAppInput, jlinkRuntime
+    doFirst { delete "$packageDir/image" }
+    def iconFile = file(isWindows ? 'packaging/W3-DataPacker.ico' : (isMac ? 'packaging/W3-DataPacker.icns' : 'packaging/icon-256.png'))
+    def command = ["$jdkBin/jpackage",
+            '--type', 'app-image',
+            '--name', appName,
+            '--app-version', packerVersion,
+            '--vendor', 'nikoltu',
+            '--description', 'W3 Data Packer',
+            '--copyright', 'Code under AGPL-3.0. Contains no game files.',
+            '--input', "$packageDir/input",
+            '--main-jar', "w3-datapacker-${packerVersion}.jar",
+            '--main-class', mainClassName,
+            '--runtime-image', "$packageDir/runtime",
+            '--java-options', '-Xmx1536m',
+            '--icon', iconFile.absolutePath,
+            '--add-launcher', "${appName}-cli=${file('packaging/cli-launcher.properties').absolutePath}",
+            '--dest', "$packageDir/image"]
+    if (isMac) {
+        command += ['--mac-package-identifier', 'com.nikoltu.w3prep', '--mac-package-name', 'W3 Data Packer']
+    }
+    commandLine command
+}
+
+def stageApp = tasks.register('stageApp', Exec) {
+    dependsOn jpackageImage
+    doFirst {
+        delete "$packageDir/stage"
+        mkdir stageDir
+    }
+    if (isWindows) {
+        commandLine 'cmd', '/c', 'xcopy', '/e', '/i', '/q', file("$packageDir/image/$appName").absolutePath, file(stageDir).absolutePath
+    } else if (isMac) {
+        commandLine 'ditto', "$packageDir/image/${appName}.app", "$stageDir/${appName}.app"
+    } else {
+        commandLine 'cp', '-a', "$packageDir/image/$appName/.", stageDir
+    }
+    doLast {
+        copy {
+            from 'README.md', 'LICENSE'
+            into stageDir
+        }
+    }
+}
+
+tasks.register('distArchive', Exec) {
+    description = 'Builds the release archive for this OS in build/distributions.'
+    group = 'distribution'
+    dependsOn stageApp
+    doFirst { mkdir distDir }
+    workingDir "$packageDir/stage"
+    if (isWindows) {
+        commandLine 'powershell', '-NoProfile', '-Command',
+                "Compress-Archive -Path '$appName' -DestinationPath '${distDir}\\${distName}.zip' -Force"
+    } else if (isMac) {
+        commandLine 'ditto', '-c', '-k', '--keepParent', appName, "$distDir/${distName}.zip"
+    } else {
+        commandLine 'tar', '-czf', "$distDir/${distName}.tar.gz", appName
+    }
+}
+
+tasks.register('allJar', Jar) {
+    description = 'One jar with everything, for any OS with Java 17 or newer.'
+    group = 'distribution'
+    archiveBaseName = 'w3-datapacker'
+    archiveClassifier = 'all'
+    destinationDirectory = distDir
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes 'Main-Class': mainClassName,
+                'Implementation-Title': 'W3 Data Packer',
+                'Implementation-Version': packerVersion
+    }
+    from sourceSets.main.output
+    dependsOn configurations.runtimeClasspath
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    exclude 'module-info.class', 'META-INF/versions/*/module-info.class', 'META-INF/*.SF', 'META-INF/*.RSA', 'META-INF/*.DSA'
+}
+
+tasks.register('screenshots', JavaExec) {
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.nikoltu.w3prep.ui.ScreenshotHarness'
+    args layout.buildDirectory.dir('screens').get().asFile.absolutePath
+}
+
+tasks.named('distZip') { enabled = false }
+tasks.named('distTar') { enabled = false }

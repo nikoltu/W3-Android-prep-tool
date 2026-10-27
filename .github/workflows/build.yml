@@ -1,0 +1,33 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Test and package
+        run: ./gradlew test distArchive allJar --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: W3-DataPacker-${{ runner.os }}
+          path: |
+            build/distributions/W3-DataPacker-*
+            build/distributions/*-all.jar

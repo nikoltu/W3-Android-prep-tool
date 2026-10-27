@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Check tag matches version
+        shell: bash
+        run: |
+          version=$(sed -n "s/^def packerVersion = '\(.*\)'/\1/p" build.gradle)
+          test "v$version" = "${GITHUB_REF_NAME}" || { echo "Tag ${GITHUB_REF_NAME} does not match version $version"; exit 1; }
+      - name: Test and package
+        run: ./gradlew test distArchive --no-daemon
+      - name: Universal jar
+        if: runner.os == 'Linux'
+        run: ./gradlew allJar --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package-${{ runner.os }}
+          path: |
+            build/distributions/W3-DataPacker-*
+            build/distributions/*-all.jar
+
+  release:
+    needs: package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd dist
+          sha256sum * > SHA256SUMS.txt
+          version="${GITHUB_REF_NAME#v}"
+          cat > notes.md <<NOTES
+          Download the file for your system, unpack it anywhere and start it. No installer.
+
+          | System | File |
+          | --- | --- |
+          | Windows 10/11 (64-bit) | \`W3-DataPacker-${version}-windows-x64.zip\` |
+          | macOS (Apple Silicon) | \`W3-DataPacker-${version}-macos-arm64.zip\` |
+          | Linux (x64) | \`W3-DataPacker-${version}-linux-x64.tar.gz\` |
+          | Any system with Java 17+ | \`w3-datapacker-${version}-all.jar\` |
+
+          The tool makes \`w3-data-classic.zip\` from your own game install. Copy it to the tablet, unpack it there, then choose the unpacked folder in W3. See the README for the steps.
+
+          Checksums are in \`SHA256SUMS.txt\`.
+
+          For use with your own legal copy only. Do not share the extracted files. Contains code only, no game files.
+          NOTES
+          gh release create "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" \
+            --title "W3 Data Packer ${version}" --notes-file notes.md \
+            W3-DataPacker-* *-all.jar SHA256SUMS.txt
