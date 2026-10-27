@@ -59,6 +59,10 @@ Get the file for your system from the [latest release](https://github.com/nikolt
 
 Unpack it anywhere and start it.
 
+> [!NOTE]
+> The `.jar` needs Java 17 or newer installed. The Windows, macOS and Linux packages include their own Java and
+> need nothing installed, so they are the easier choice.
+
 <details>
 <summary><b>First start: Windows, macOS and Linux warnings</b></summary>
 

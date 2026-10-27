@@ -5,6 +5,7 @@ plugins {
 
 def packerVersion = '0.1.0'
 def mainClassName = 'com.nikoltu.w3prep.Main'
+def launcherClassName = 'com.nikoltu.w3prep.Launcher'
 def appName = 'W3-DataPacker'
 
 group = 'com.nikoltu'
@@ -19,9 +20,26 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
+sourceSets {
+    launcher {
+        java {
+            srcDirs = ['src/launcher/java']
+        }
+    }
+    test {
+        compileClasspath += sourceSets.launcher.output
+        runtimeClasspath += sourceSets.launcher.output
+    }
+}
+
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
     options.release = 17
+}
+
+tasks.named('compileLauncherJava') {
+    options.release = 8
+    options.compilerArgs += ['-Xlint:-options']
 }
 
 dependencies {
@@ -48,8 +66,9 @@ tasks.named('processResources') {
 
 tasks.named('jar') {
     archiveBaseName = 'w3-datapacker'
+    from sourceSets.launcher.output
     manifest {
-        attributes 'Main-Class': mainClassName,
+        attributes 'Main-Class': launcherClassName,
                 'Implementation-Title': 'W3 Data Packer',
                 'Implementation-Version': packerVersion
     }
@@ -152,10 +171,11 @@ tasks.register('allJar', Jar) {
     destinationDirectory = distDir
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
-        attributes 'Main-Class': mainClassName,
+        attributes 'Main-Class': launcherClassName,
                 'Implementation-Title': 'W3 Data Packer',
                 'Implementation-Version': packerVersion
     }
+    from sourceSets.launcher.output
     from sourceSets.main.output
     dependsOn configurations.runtimeClasspath
     from {
