@@ -3,6 +3,7 @@ name: Release
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -20,6 +21,7 @@ jobs:
           distribution: temurin
           java-version: '21'
       - name: Check tag matches version
+        if: github.ref_type == 'tag'
         shell: bash
         run: |
           version=$(sed -n "s/^def packerVersion = '\(.*\)'/\1/p" build.gradle)
@@ -40,6 +42,9 @@ jobs:
     needs: package
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source
       - uses: actions/download-artifact@v4
         with:
           path: dist
@@ -48,9 +53,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          version=$(sed -n "s/^def packerVersion = '\(.*\)'/\1/p" source/build.gradle)
+          tag="v${version}"
           cd dist
           sha256sum * > SHA256SUMS.txt
-          version="${GITHUB_REF_NAME#v}"
           cat > notes.md <<NOTES
           Download the file for your system, unpack it anywhere and start it. No installer.
 
@@ -67,6 +73,6 @@ jobs:
 
           For use with your own legal copy only. Do not share the extracted files. Contains code only, no game files.
           NOTES
-          gh release create "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" \
+          gh release create "${tag}" --repo "${GITHUB_REPOSITORY}" --target "${GITHUB_SHA}" \
             --title "W3 Data Packer ${version}" --notes-file notes.md \
             W3-DataPacker-* *-all.jar SHA256SUMS.txt
