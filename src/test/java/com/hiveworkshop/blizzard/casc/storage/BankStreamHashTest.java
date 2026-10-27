@@ -104,6 +104,33 @@ class BankStreamHashTest {
 	}
 
 	@Test
+	void blteWithoutContainerHeaderDecodesAndChecks() throws Exception {
+		final byte[] a = plain("hello ");
+		final byte[] b = plain("world");
+		final ByteBuffer full = container(new byte[][] { a, b }, new byte[][] { md5(a), md5(b) }, new int[] { 6, 5 });
+		full.position(30);
+		final ByteBuffer blteOnly = full.slice();
+		assertTrue(BankStream.startsWithBlte(blteOnly));
+		final int headerSize = blteOnly.getInt(4);
+		final byte[] headerBytes = new byte[headerSize];
+		blteOnly.duplicate().get(headerBytes);
+		final byte[] digest = md5(headerBytes);
+		final com.hiveworkshop.blizzard.casc.Key key = new com.hiveworkshop.blizzard.casc.Key(
+				java.util.Arrays.copyOf(digest, 9));
+		assertThrows(com.hiveworkshop.blizzard.casc.nio.MalformedCASCStructureException.class,
+				() -> BankStream.withoutContainer(blteOnly,
+						new com.hiveworkshop.blizzard.casc.Key(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 })));
+		final BankStream stream = BankStream.withoutContainer(blteOnly, key);
+		assertTrue(stream.verifyBankHashes());
+		final ByteBuffer out = ByteBuffer.allocate(11);
+		while (stream.hasNextBank()) {
+			stream.getBank(out);
+		}
+		assertArrayEquals("hello world".getBytes(StandardCharsets.UTF_8), out.array());
+		assertFalse(BankStream.startsWithBlte(ByteBuffer.wrap(new byte[] { 0, 0, 0, 0 })));
+	}
+
+	@Test
 	void zeroHashesAreSkipped() throws Exception {
 		final byte[] a = plain("abc");
 		final BankStream stream = new BankStream(container(new byte[][] { a }, new byte[][] { new byte[16] },

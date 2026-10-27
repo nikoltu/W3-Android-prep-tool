@@ -23,6 +23,43 @@ public class BankStream {
 	private int bank = 0;
 	private boolean hasBanks;
 
+	private BankStream(final ByteBuffer blteBuffer) throws IOException {
+		container = null;
+		final ByteBuffer buffer = blteBuffer.slice();
+		content = BLTEContent.decodeContent(buffer);
+		hasBanks = true;
+		streamBuffer = buffer;
+	}
+
+	public static BankStream withoutContainer(final ByteBuffer blteBuffer, final Key encodingKey) throws IOException {
+		if (!startsWithBlte(blteBuffer) || (blteBuffer.remaining() < 8)) {
+			throw new MalformedCASCStructureException("missing BLTE identifier");
+		}
+		final int headerSize = blteBuffer.getInt(blteBuffer.position() + 4);
+		if ((headerSize <= 8) || (headerSize > blteBuffer.remaining())) {
+			throw new MalformedCASCStructureException("BLTE without block table can't be matched to its key");
+		}
+		final MessageDigest md5;
+		try {
+			md5 = MessageDigest.getInstance("MD5");
+		} catch (final NoSuchAlgorithmException e) {
+			throw new IOException("MD5 not available", e);
+		}
+		final ByteBuffer header = blteBuffer.duplicate();
+		header.limit(header.position() + headerSize);
+		md5.update(header);
+		if (!new Key(md5.digest()).equals(encodingKey)) {
+			throw new MalformedCASCStructureException("BLTE data belongs to another key");
+		}
+		return new BankStream(blteBuffer);
+	}
+
+	public static boolean startsWithBlte(final ByteBuffer buffer) {
+		return (buffer.remaining() >= 4) && (buffer.get(buffer.position()) == 'B')
+				&& (buffer.get(buffer.position() + 1) == 'L') && (buffer.get(buffer.position() + 2) == 'T')
+				&& (buffer.get(buffer.position() + 3) == 'E');
+	}
+
 	public BankStream(final ByteBuffer storageBuffer, final Key encodingKey) throws IOException {
 		ByteBuffer streamBuffer = storageBuffer.slice();
 		container = new StorageContainer(streamBuffer);

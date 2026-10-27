@@ -20,12 +20,15 @@ import java.util.List;
 import java.util.Map;
 
 import com.hiveworkshop.blizzard.casc.Key;
+import com.hiveworkshop.blizzard.casc.nio.DataNotLocalException;
 import com.hiveworkshop.blizzard.casc.nio.MalformedCASCStructureException;
 
 public class Storage implements AutoCloseable {
 	public static final String DATA_FOLDER_NAME = "data";
 
 	private static final int INDEX_COUNT = 16;
+
+	private static final int CONTAINER_HEADER_SIZE = 30;
 
 	private static final int INDEX_COPIES = 2;
 
@@ -210,7 +213,33 @@ public class Storage implements AutoCloseable {
 
 		final ByteBuffer storageBuffer = getStorageBuffer(storeIndex, storeOffset, indexEntry.getFileSize());
 
-		return new BankStream(storageBuffer, indexEntry.getKey());
+		try {
+			return new BankStream(storageBuffer, indexEntry.getKey());
+		} catch (final MalformedCASCStructureException e) {
+			final boolean blte = BankStream.startsWithBlte(storageBuffer);
+			if (!blte && !(e instanceof DataNotLocalException)) {
+				throw e;
+			}
+			if (storeOffset >= CONTAINER_HEADER_SIZE) {
+				try {
+					final ByteBuffer withHeader = getStorageBuffer(storeIndex, storeOffset - CONTAINER_HEADER_SIZE,
+							indexEntry.getFileSize());
+					return new BankStream(withHeader, indexEntry.getKey());
+				} catch (final MalformedCASCStructureException | EOFException again) {
+					if (!blte) {
+						throw e;
+					}
+				}
+			}
+			if (!blte) {
+				throw e;
+			}
+			try {
+				return BankStream.withoutContainer(storageBuffer, indexEntry.getKey());
+			} catch (final MalformedCASCStructureException again) {
+				throw e;
+			}
+		}
 	}
 
 	private synchronized IndexFile loadOlderIndex(final Path path) throws IOException {
