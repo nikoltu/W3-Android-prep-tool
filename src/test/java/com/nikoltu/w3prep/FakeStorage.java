@@ -13,6 +13,7 @@ class FakeStorage implements GameStorage {
 	private final Map<String, byte[]> files = new LinkedHashMap<>();
 	private final Set<String> remote = new HashSet<>();
 	private final Set<String> broken = new HashSet<>();
+	private final Set<String> notDownloaded = new HashSet<>();
 
 	FakeStorage add(final String path, final String content) {
 		this.files.put(path, content.getBytes(StandardCharsets.UTF_8));
@@ -40,6 +41,11 @@ class FakeStorage implements GameStorage {
 				.add("war3.w3mod\\ui\\war3skins.txt", "skins").add("war3.w3mod\\fonts\\font.ttf", "font");
 	}
 
+	FakeStorage notDownloaded(final String path) {
+		this.notDownloaded.add(path);
+		return this;
+	}
+
 	@Override
 	public String getVersion() {
 		return "9.9.9.12345";
@@ -56,6 +62,9 @@ class FakeStorage implements GameStorage {
 
 	@Override
 	public byte[] read(final String path) throws IOException {
+		if (this.notDownloaded.contains(path)) {
+			throw new com.hiveworkshop.blizzard.casc.nio.DataNotLocalException("data not downloaded yet");
+		}
 		if (this.broken.contains(path)) {
 			throw new IOException("data missing from storage");
 		}

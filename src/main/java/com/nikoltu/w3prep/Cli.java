@@ -20,6 +20,7 @@ public final class Cli {
 			"  --set de|hd          also make a graphics set package (experimental)",
 			"  --desktop-folder     also write a plain folder and warsmash-data.ini",
 			"  --dry-run            show what would be packed, write nothing",
+			"  --allow-missing      make the package even if some files can't be read",
 			"  --send               after packing, push the Classic package with adb", "",
 			"For use with your own legal copy only. Do not share the extracted files.");
 
@@ -68,6 +69,7 @@ public final class Cli {
 		boolean desktopFolder = false;
 		boolean dryRun = false;
 		boolean send = false;
+		boolean allowMissing = false;
 		final Set<GraphicsSet> sets = EnumSet.noneOf(GraphicsSet.class);
 		try {
 			for (int i = 0; i < args.length; i++) {
@@ -97,6 +99,9 @@ public final class Cli {
 					break;
 				case "--send":
 					send = true;
+					break;
+				case "--allow-missing":
+					allowMissing = true;
 					break;
 				case "--help":
 				case "-h":
@@ -161,16 +166,21 @@ public final class Cli {
 				final Thread reporter = startReporter(progress);
 				final Packer.Outcome outcome;
 				try {
-					outcome = Packer.run(folder, analysis.getStorage(), plans, outputFolder, options, progress, log);
+					outcome = Packer.run(folder, analysis.getStorage(), plans, outputFolder, options, progress, log,
+							allowMissing);
 				} finally {
 					reporter.interrupt();
 				}
 				if (!outcome.isSuccess()) {
-					log.info(outcome.getFailures().size() + " files could not be read. The package was not made.");
+					log.info(outcome.getFailures().size() + " files could not be read. The package was not made. "
+							+ "Run again with --allow-missing to make it without them.");
 					return 4;
 				}
 				settings.setInstallFolder(folder);
 				settings.save();
+				if (!outcome.getLeftOut().isEmpty()) {
+					log.info(outcome.getLeftOut().size() + " files were left out; they are listed in the manifest");
+				}
 				log.info("ready: " + Sizes.count(outcome.getFileCount()) + " files, "
 						+ Sizes.format(outcome.getByteCount()) + ", every file checked");
 				for (final Path packageFile : outcome.getPackages()) {

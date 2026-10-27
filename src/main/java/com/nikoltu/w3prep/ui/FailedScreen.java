@@ -15,6 +15,7 @@ final class FailedScreen extends JPanel {
 	final JButton copyButton = Ui.button("Copy details");
 	final JButton backButton = Ui.button("Back");
 	final JButton retryButton = Ui.primary("Try again");
+	final JButton skipButton = Ui.button("Make it without these files");
 
 	private final JLabel title = Ui.title("");
 	private final WrapText message = Ui.sub("");
@@ -51,7 +52,7 @@ final class FailedScreen extends JPanel {
 		final JPanel bottom = new JPanel(new BorderLayout());
 		bottom.setOpaque(false);
 		bottom.add(this.copyButton, BorderLayout.WEST);
-		bottom.add(Ui.row(10, this.backButton, this.retryButton), BorderLayout.EAST);
+		bottom.add(Ui.row(10, this.backButton, this.skipButton, this.retryButton), BorderLayout.EAST);
 		body.add(bottom);
 		add(body, BorderLayout.CENTER);
 	}
@@ -59,7 +60,7 @@ final class FailedScreen extends JPanel {
 	void showReadFailures(final List<ReadFailure> failures) {
 		this.title.setText("The package was not made");
 		this.message.setText(failures.size() + (failures.size() == 1 ? " file" : " files")
-				+ " could not be read. A package with missing files is never offered.");
+				+ " could not be read. A package with missing files is only made if you ask for it.");
 		this.listCard.removeAll();
 		this.listCard.add(Ui.heading("Files that could not be read"));
 		final StringBuilder all = new StringBuilder();
@@ -75,7 +76,9 @@ final class FailedScreen extends JPanel {
 		}
 		this.listCard.setVisible(true);
 		this.advice.setText("Usually the game is still updating, or the install is damaged. Let the game launcher "
-				+ "finish updating, or run its \"Scan and Repair\". Then try again.");
+				+ "finish updating, or run its \"Scan and Repair\". Then try again. If you don't need these files, "
+				+ "you can make the package without them; they are listed in its manifest.");
+		this.skipButton.setVisible(true);
 		this.details = all.toString();
 		refresh();
 	}
@@ -86,6 +89,7 @@ final class FailedScreen extends JPanel {
 		this.message.setText(messageText);
 		this.listCard.removeAll();
 		this.listCard.setVisible(false);
+		this.skipButton.setVisible(false);
 		this.advice.setText(adviceText);
 		this.details = detailText == null ? messageText : detailText;
 		refresh();

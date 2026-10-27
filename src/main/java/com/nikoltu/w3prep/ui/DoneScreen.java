@@ -105,6 +105,26 @@ final class DoneScreen extends JPanel {
 			this.extras.add(Ui.text("Desktop build: plain folder and " + outcome.getDesktopIni().getFileName()
 					+ " written next to the package.", Theme.SOFT));
 		}
+		if (!outcome.getLeftOut().isEmpty()) {
+			int notDownloaded = 0;
+			for (final com.nikoltu.w3prep.ReadFailure file : outcome.getLeftOut()) {
+				if (file.getReason().startsWith("not downloaded")) {
+					notDownloaded++;
+				}
+			}
+			final int unreadable = outcome.getLeftOut().size() - notDownloaded;
+			final StringBuilder text = new StringBuilder();
+			text.append(Sizes.count(outcome.getLeftOut().size())).append(" files were left out");
+			if ((notDownloaded > 0) && (unreadable > 0)) {
+				text.append(" (").append(Sizes.count(notDownloaded)).append(" not downloaded by the game yet, ")
+						.append(Sizes.count(unreadable)).append(" could not be read)");
+			} else if (notDownloaded > 0) {
+				text.append(" because the game has not downloaded them yet");
+			}
+			text.append(". They are listed in the package's manifest. To include them, let the game launcher finish "
+					+ "all downloads, then make the package again.");
+			this.extras.add(Ui.notice(text.toString(), Theme.WARN_BG, Theme.WARN));
+		}
 		this.extras.setVisible(this.extras.getComponentCount() > 0);
 		checkAdb();
 	}

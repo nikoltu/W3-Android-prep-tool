@@ -22,6 +22,11 @@ class BankStreamHashTest {
 	}
 
 	private static ByteBuffer container(final byte[][] banks, final byte[][] hashes, final int[] decodedSizes) {
+		return container(new byte[16], banks, hashes, decodedSizes);
+	}
+
+	private static ByteBuffer container(final byte[] headerKey, final byte[][] banks, final byte[][] hashes,
+			final int[] decodedSizes) {
 		final ByteArrayOutputStream blte = new ByteArrayOutputStream();
 		final int headerSize = 8 + 4 + (banks.length * 24);
 		final ByteBuffer header = ByteBuffer.allocate(headerSize).order(ByteOrder.BIG_ENDIAN);
@@ -36,7 +41,7 @@ class BankStreamHashTest {
 		}
 		final byte[] body = blte.toByteArray();
 		final ByteBuffer buffer = ByteBuffer.allocate(30 + body.length).order(ByteOrder.LITTLE_ENDIAN);
-		buffer.put(new byte[16]).putInt(30 + body.length).putShort((short) 0).putInt(0).putInt(0).put(body);
+		buffer.put(headerKey).putInt(30 + body.length).putShort((short) 0).putInt(0).putInt(0).put(body);
 		buffer.flip();
 		return buffer;
 	}
@@ -72,6 +77,30 @@ class BankStreamHashTest {
 		final BankStream stream = new BankStream(container(new byte[][] { a, b }, new byte[][] { md5(a), hashB },
 				new int[] { 6, 5 }), null);
 		assertThrows(HashMismatchException.class, stream::verifyBankHashes);
+	}
+
+	@Test
+	void zeroHeaderMeansNotDownloaded() throws Exception {
+		final byte[] a = plain("abc");
+		final com.hiveworkshop.blizzard.casc.Key expected = new com.hiveworkshop.blizzard.casc.Key(
+				new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 });
+		assertThrows(com.hiveworkshop.blizzard.casc.nio.DataNotLocalException.class,
+				() -> new BankStream(container(new byte[][] { a }, new byte[][] { md5(a) }, new int[] { 3 }), expected));
+	}
+
+	@Test
+	void otherKeyMismatchNamesBothKeys() throws Exception {
+		final byte[] a = plain("abc");
+		final byte[] header = new byte[16];
+		header[15] = 0x77;
+		final com.hiveworkshop.blizzard.casc.Key expected = new com.hiveworkshop.blizzard.casc.Key(
+				new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 });
+		final com.hiveworkshop.blizzard.casc.nio.MalformedCASCStructureException error = assertThrows(
+				com.hiveworkshop.blizzard.casc.nio.MalformedCASCStructureException.class,
+				() -> new BankStream(container(header, new byte[][] { a }, new byte[][] { md5(a) }, new int[] { 3 }),
+						expected));
+		assertFalse(error instanceof com.hiveworkshop.blizzard.casc.nio.DataNotLocalException);
+		assertTrue(error.getMessage().contains("index 010203040506070809"));
 	}
 
 	@Test

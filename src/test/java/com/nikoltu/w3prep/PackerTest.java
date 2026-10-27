@@ -46,13 +46,18 @@ class PackerTest {
 
 	private Packer.Outcome run(final FakeStorage storage, final PackOptions options, final Progress progress)
 			throws Exception {
+		return run(storage, options, progress, false);
+	}
+
+	private Packer.Outcome run(final FakeStorage storage, final PackOptions options, final Progress progress,
+			final boolean allowMissing) throws Exception {
 		final PackPlanner planner = new PackPlanner(storage.listEntries());
 		final List<PackPlan> plans = new java.util.ArrayList<>();
 		plans.add(planner.planClassic(options));
 		for (final GraphicsSet set : options.getSets()) {
 			plans.add(planner.planSet(set));
 		}
-		return Packer.run(this.install, storage, plans, this.out, options, progress, AppLog.open(false));
+		return Packer.run(this.install, storage, plans, this.out, options, progress, AppLog.open(false), allowMissing);
 	}
 
 	private static Progress progress() {
@@ -107,6 +112,34 @@ class PackerTest {
 		assertEquals("data missing from storage", outcome.getFailures().get(0).getReason());
 		assertTrue(java.util.Arrays.equals(earlier, Files.readAllBytes(zip)));
 		assertNoPartFiles();
+	}
+
+	@Test
+	void notDownloadedFilesAreLeftOutAndListed() throws Exception {
+		final Packer.Outcome outcome = run(storage().notDownloaded("war3.w3mod\\units\\human\\footman.mdx"),
+				PackOptions.defaults(), progress());
+		assertTrue(outcome.isSuccess());
+		assertEquals(4, outcome.getFileCount());
+		assertEquals(List.of("units/human/footman.mdx"),
+				outcome.getLeftOut().stream().map(ReadFailure::getPath).collect(Collectors.toList()));
+		try (ZipFile file = new ZipFile(this.out.resolve("w3-data-classic.zip").toFile())) {
+			assertTrue(file.getEntry("units/human/footman.mdx") == null);
+		}
+		final String manifest = Files.readString(this.out.resolve("w3-data-classic.manifest.json"));
+		assertTrue(manifest.contains("{\"path\": \"units/human/footman.mdx\", \"reason\": \"not downloaded by the game yet\"}"));
+	}
+
+	@Test
+	void unreadableFilesCanBeLeftOutOnRequest() throws Exception {
+		final FakeStorage broken = storage().breakFile("war3.w3mod\\ui\\war3skins.txt");
+		assertFalse(run(broken, PackOptions.defaults(), progress()).isSuccess());
+		final Packer.Outcome outcome = run(broken, PackOptions.defaults(), progress(), true);
+		assertTrue(outcome.isSuccess());
+		assertEquals(1, outcome.getLeftOut().size());
+		assertEquals("data missing from storage", outcome.getLeftOut().get(0).getReason());
+		try (ZipFile file = new ZipFile(this.out.resolve("w3-data-classic.zip").toFile())) {
+			assertEquals(5, file.size());
+		}
 	}
 
 	@Test

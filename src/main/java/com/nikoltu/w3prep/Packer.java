@@ -18,15 +18,27 @@ public final class Packer {
 		private final long byteCount;
 		private final Path desktopIni;
 		private final boolean blocksChecked;
+		private final List<ReadFailure> leftOut;
 
 		public Outcome(final List<Path> packages, final List<ReadFailure> failures, final int fileCount,
 				final long byteCount, final Path desktopIni, final boolean blocksChecked) {
+			this(packages, failures, fileCount, byteCount, desktopIni, blocksChecked, Collections.emptyList());
+		}
+
+		public Outcome(final List<Path> packages, final List<ReadFailure> failures, final int fileCount,
+				final long byteCount, final Path desktopIni, final boolean blocksChecked,
+				final List<ReadFailure> leftOut) {
+			this.leftOut = leftOut;
 			this.packages = packages;
 			this.failures = failures;
 			this.fileCount = fileCount;
 			this.byteCount = byteCount;
 			this.desktopIni = desktopIni;
 			this.blocksChecked = blocksChecked;
+		}
+
+		public List<ReadFailure> getLeftOut() {
+			return this.leftOut;
 		}
 
 		public boolean isBlocksChecked() {
@@ -64,6 +76,12 @@ public final class Packer {
 	public static Outcome run(final Path install, final GameStorage storage, final List<PackPlan> plans,
 			final Path outputFolder, final PackOptions options, final Progress progress, final AppLog log)
 			throws PackException, PackCancelledException, IOException {
+		return run(install, storage, plans, outputFolder, options, progress, log, false);
+	}
+
+	public static Outcome run(final Path install, final GameStorage storage, final List<PackPlan> plans,
+			final Path outputFolder, final PackOptions options, final Progress progress, final AppLog log,
+			final boolean allowMissing) throws PackException, PackCancelledException, IOException {
 		progress.setPhase(Progress.Phase.CHECK_INSTALL);
 		long totalBytes = 0;
 		for (final PackPlan plan : plans) {
@@ -81,6 +99,7 @@ public final class Packer {
 
 		final List<Path> parts = new ArrayList<>();
 		final List<PackWriter.Written> written = new ArrayList<>();
+		final List<ReadFailure> leftOut = new ArrayList<>();
 		boolean success = false;
 		try {
 			progress.setPhase(Progress.Phase.COPY);
@@ -90,14 +109,21 @@ public final class Packer {
 						+ Sizes.format(plan.getTotalBytes()) + (plan.getSkipped().isEmpty() ? ""
 								: " · " + plan.getSkipped().size() + " listed files not on this install"));
 				parts.add(part);
-				final PackWriter.Written result = PackWriter.write(plan, storage, part, progress);
-				if (!result.getFailures().isEmpty()) {
-					for (final ReadFailure failure : result.getFailures()) {
-						log.info("could not read " + failure);
-					}
+				final PackWriter.Written result = PackWriter.write(plan, storage, part, progress, allowMissing);
+				for (final ReadFailure failure : result.getFailures()) {
+					log.info("could not read " + failure);
+				}
+				if (!result.getNotDownloaded().isEmpty()) {
+					log.info(plan.getLabel() + ": " + result.getNotDownloaded().size()
+							+ " files are not downloaded by the game yet and were left out, for example "
+							+ result.getNotDownloaded().get(0).getPath());
+				}
+				if (!result.getFailures().isEmpty() && !allowMissing) {
 					return new Outcome(Collections.emptyList(), result.getFailures(), 0, 0, null,
 							blockCheck.isEnabled());
 				}
+				leftOut.addAll(result.getNotDownloaded());
+				leftOut.addAll(result.getFailures());
 				written.add(result);
 			}
 
@@ -121,8 +147,10 @@ public final class Packer {
 				move(parts.get(i), target);
 				packages.add(target);
 				final List<WrittenFile> files = written.get(i).getFiles();
+				final List<ReadFailure> missing = new ArrayList<>(written.get(i).getNotDownloaded());
+				missing.addAll(written.get(i).getFailures());
 				Manifest.write(Manifest.pathFor(target), storage.getVersion(), options.describe(),
-						plans.get(i).getPackageName(), files);
+						plans.get(i).getPackageName(), files, missing);
 				for (final WrittenFile file : files) {
 					if (!"tool".equals(file.getLayer())) {
 						fileCount++;
@@ -140,7 +168,8 @@ public final class Packer {
 			}
 			progress.setPhase(Progress.Phase.DONE);
 			success = true;
-			return new Outcome(packages, Collections.emptyList(), fileCount, byteCount, ini, blockCheck.isEnabled());
+			return new Outcome(packages, Collections.emptyList(), fileCount, byteCount, ini, blockCheck.isEnabled(),
+					leftOut);
 		} finally {
 			if (!success) {
 				for (final Path part : parts) {

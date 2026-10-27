@@ -115,7 +115,7 @@ public final class MainWindow {
 		this.ready.chooseInstallButton.addActionListener(e -> chooseInstall());
 		this.ready.changeOutputButton.addActionListener(e -> chooseOutput());
 		this.ready.advancedButton.addActionListener(e -> toggleAdvanced());
-		this.ready.createButton.addActionListener(e -> startRun());
+		this.ready.createButton.addActionListener(e -> startRun(false));
 		this.ready.onOptionsChanged(this::updateSummary);
 
 		this.working.cancelButton.addActionListener(e -> confirmStop(false));
@@ -128,7 +128,8 @@ public final class MainWindow {
 				.setContents(new StringSelection(this.failed.getDetails() + System.lineSeparator() + "Log: "
 						+ (this.log.getFile() == null ? "-" : this.log.getFile())), null));
 		this.failed.backButton.addActionListener(e -> show(READY));
-		this.failed.retryButton.addActionListener(e -> startRun());
+		this.failed.retryButton.addActionListener(e -> startRun(false));
+		this.failed.skipButton.addActionListener(e -> startRun(true));
 	}
 
 	private void findInstall() {
@@ -286,7 +287,7 @@ public final class MainWindow {
 		}
 	}
 
-	private void startRun() {
+	private void startRun(final boolean allowMissing) {
 		if (this.analysis == null) {
 			show(READY);
 			return;
@@ -326,7 +327,7 @@ public final class MainWindow {
 		this.worker = new Thread(() -> {
 			try {
 				final Packer.Outcome outcome = Packer.run(current.getInstall(), current.getStorage(), plans, output,
-						options, run, this.log);
+						options, run, this.log, allowMissing);
 				SwingUtilities.invokeLater(() -> finished(outcome));
 			} catch (final PackCancelledException e) {
 				this.log.info("cancelled, unfinished package deleted");

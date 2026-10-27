@@ -20,7 +20,7 @@ public final class Manifest {
 	}
 
 	public static void write(final Path file, final String gameVersion, final String profile, final String packageName,
-			final List<WrittenFile> files) throws IOException {
+			final List<WrittenFile> files, final List<ReadFailure> leftOut) throws IOException {
 		try (BufferedWriter out = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
 			out.write("{\n");
 			field(out, "tool", "W3 Data Packer");
@@ -38,6 +38,13 @@ public final class Manifest {
 						+ ", \"crc32\": " + quote(String.format("%08x", entry.getCrc())) + ", \"md5\": "
 						+ quote(entry.getMd5()) + ", \"layer\": " + quote(entry.getLayer()) + "}");
 				out.write(i + 1 < files.size() ? ",\n" : "\n");
+			}
+			out.write("  ],\n");
+			out.write("  \"leftOut\": [\n");
+			for (int i = 0; i < leftOut.size(); i++) {
+				out.write("    {\"path\": " + quote(leftOut.get(i).getPath()) + ", \"reason\": "
+						+ quote(leftOut.get(i).getReason()) + "}");
+				out.write(i + 1 < leftOut.size() ? ",\n" : "\n");
 			}
 			out.write("  ]\n}\n");
 		}

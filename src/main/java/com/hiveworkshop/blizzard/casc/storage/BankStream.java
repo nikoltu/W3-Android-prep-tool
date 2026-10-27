@@ -12,6 +12,7 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
 import com.hiveworkshop.blizzard.casc.Key;
+import com.hiveworkshop.blizzard.casc.nio.DataNotLocalException;
 import com.hiveworkshop.blizzard.casc.nio.HashMismatchException;
 import com.hiveworkshop.blizzard.casc.nio.MalformedCASCStructureException;
 
@@ -26,7 +27,11 @@ public class BankStream {
 		ByteBuffer streamBuffer = storageBuffer.slice();
 		container = new StorageContainer(streamBuffer);
 		if ((encodingKey != null) && !container.getKey().equals(encodingKey)) {
-			throw new MalformedCASCStructureException("container encoding key mismatch");
+			if (isZero(container.getKey().getKey())) {
+				throw new DataNotLocalException("data not downloaded yet (index " + encodingKey + ")");
+			}
+			throw new MalformedCASCStructureException("container encoding key mismatch (index " + encodingKey
+					+ ", data " + container.getKey() + ", size " + container.getSize() + ")");
 		}
 
 		final int storageSize = (int) container.getSize();

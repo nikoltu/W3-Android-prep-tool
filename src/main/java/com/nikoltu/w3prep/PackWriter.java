@@ -22,6 +22,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+import com.hiveworkshop.blizzard.casc.nio.DataNotLocalException;
 import com.hiveworkshop.blizzard.casc.nio.HashMismatchException;
 
 public final class PackWriter {
@@ -35,10 +36,16 @@ public final class PackWriter {
 	public static final class Written {
 		private final List<WrittenFile> files;
 		private final List<ReadFailure> failures;
+		private final List<ReadFailure> notDownloaded;
 
-		Written(final List<WrittenFile> files, final List<ReadFailure> failures) {
+		Written(final List<WrittenFile> files, final List<ReadFailure> failures, final List<ReadFailure> notDownloaded) {
 			this.files = files;
 			this.failures = failures;
+			this.notDownloaded = notDownloaded;
+		}
+
+		public List<ReadFailure> getNotDownloaded() {
+			return this.notDownloaded;
 		}
 
 		public List<WrittenFile> getFiles() {
@@ -55,8 +62,14 @@ public final class PackWriter {
 
 	public static Written write(final PackPlan plan, final GameStorage storage, final Path output,
 			final Progress progress) throws IOException, PackCancelledException {
+		return write(plan, storage, output, progress, false);
+	}
+
+	public static Written write(final PackPlan plan, final GameStorage storage, final Path output,
+			final Progress progress, final boolean allowMissing) throws IOException, PackCancelledException {
 		final List<WrittenFile> files = new ArrayList<>(plan.getFileCount());
 		final List<ReadFailure> failures = new ArrayList<>();
+		final List<ReadFailure> notDownloaded = new ArrayList<>();
 		final MessageDigest md5 = newMd5();
 		final CRC32 crc = new CRC32();
 		boolean complete = false;
@@ -69,12 +82,16 @@ public final class PackWriter {
 				final byte[] data;
 				try {
 					data = entry.isInline() ? entry.getInlineContent() : storage.read(entry.getSourcePath());
+				} catch (final DataNotLocalException e) {
+					notDownloaded.add(new ReadFailure(entry.getZipPath(), "not downloaded by the game yet"));
+					progress.fileCopied(entry.getSize());
+					continue;
 				} catch (final IOException | RuntimeException e) {
 					failures.add(new ReadFailure(entry.getZipPath(), describe(e)));
 					progress.fileCopied(entry.getSize());
 					continue;
 				}
-				if (!failures.isEmpty()) {
+				if (!failures.isEmpty() && !allowMissing) {
 					progress.fileCopied(entry.getSize());
 					continue;
 				}
@@ -106,11 +123,11 @@ public final class PackWriter {
 			fileOut.getChannel().force(true);
 			complete = true;
 		} finally {
-			if (!complete || !failures.isEmpty()) {
+			if (!complete || (!failures.isEmpty() && !allowMissing)) {
 				java.nio.file.Files.deleteIfExists(output);
 			}
 		}
-		return new Written(files, failures);
+		return new Written(files, failures, notDownloaded);
 	}
 
 	public static void verify(final Path zipFile, final List<WrittenFile> files, final Progress progress)
