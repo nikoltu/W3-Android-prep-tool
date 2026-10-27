@@ -3,7 +3,7 @@ plugins {
     id 'application'
 }
 
-def packerVersion = '0.1.0'
+def packerVersion = '0.1.1'
 def mainClassName = 'com.nikoltu.w3prep.Main'
 def launcherClassName = 'com.nikoltu.w3prep.Launcher'
 def appName = 'W3-DataPacker'
