@@ -65,6 +65,7 @@ def osLabel = isWindows ? 'windows' : (isMac ? 'macos' : 'linux')
 def archLabel = ['aarch64', 'arm64'].contains(System.getProperty('os.arch')) ? 'arm64' : 'x64'
 def distName = "${appName}-${packerVersion}-${osLabel}-${archLabel}"
 def stageDir = "$packageDir/stage/$appName"
+def bundleVersion = (isMac && packerVersion.startsWith('0.')) ? '1.0.0' : packerVersion
 
 def copyAppInput = tasks.register('copyAppInput', Sync) {
     from tasks.named('jar')
@@ -88,7 +89,7 @@ def jpackageImage = tasks.register('jpackageImage', Exec) {
     def command = ["$jdkBin/jpackage",
             '--type', 'app-image',
             '--name', appName,
-            '--app-version', packerVersion,
+            '--app-version', bundleVersion,
             '--vendor', 'nikoltu',
             '--description', 'W3 Data Packer',
             '--copyright', 'Code under AGPL-3.0. Contains no game files.',
