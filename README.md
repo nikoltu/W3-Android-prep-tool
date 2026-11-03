@@ -52,10 +52,10 @@ Get the file for your system from the [latest release](https://github.com/nikolt
 
 | System | File | Start |
 | --- | --- | --- |
-| Windows 10 / 11, 64-bit | `W3-DataPacker-0.1.1-windows-x64.zip` | `W3-DataPacker.exe` |
-| macOS, Apple Silicon | `W3-DataPacker-0.1.1-macos-arm64.zip` | `W3-DataPacker.app` |
-| Linux, x64 | `W3-DataPacker-0.1.1-linux-x64.tar.gz` | `W3-DataPacker/bin/W3-DataPacker` |
-| Any system with Java 17+ | `w3-datapacker-0.1.1-all.jar` | `java -jar w3-datapacker-0.1.1-all.jar` |
+| Windows 10 / 11, 64-bit | `W3-DataPacker-0.1.2-windows-x64.zip` | `W3-DataPacker.exe` |
+| macOS, Apple Silicon | `W3-DataPacker-0.1.2-macos-arm64.zip` | `W3-DataPacker.app` |
+| Linux, x64 | `W3-DataPacker-0.1.2-linux-x64.tar.gz` | `W3-DataPacker/bin/W3-DataPacker` |
+| Any system with Java 17+ | `w3-datapacker-0.1.2-all.jar` | `java -jar w3-datapacker-0.1.2-all.jar` |
 
 Unpack it anywhere and start it.
 
@@ -70,7 +70,7 @@ Unpack it anywhere and start it.
   page, then choose **More info** → **Run anyway**.
 - **macOS:** the app is not notarized. Right-click `W3-DataPacker.app` → **Open** → **Open**. Or, in Terminal:
   `xattr -dr com.apple.quarantine W3-DataPacker.app`
-- **Linux:** `tar -xzf W3-DataPacker-0.1.1-linux-x64.tar.gz && ./W3-DataPacker/bin/W3-DataPacker`
+- **Linux:** `tar -xzf W3-DataPacker-0.1.2-linux-x64.tar.gz && ./W3-DataPacker/bin/W3-DataPacker`
 
 </details>
 
@@ -106,8 +106,9 @@ Press **Create tablet package**. After a minute or two `w3-data-classic.zip` is 
 
 ### 5. Point W3 at the folder
 
-Open W3, go to its data folder setting and choose `w3-data-classic`, the folder that directly contains `units`
-and `ui`. When W3 starts, you can delete the ZIP.
+Open W3, go to its data folder setting and choose `w3-data-classic` (or the folder above it). When W3 asks for
+**All files access**, allow it: W3 needs it to read a folder outside its own app folder. When W3 starts, you can
+delete the ZIP.
 
 > [!TIP]
 > After a game update, run the tool again, copy and unpack the new ZIP, and point W3 at the new folder.
@@ -156,7 +157,7 @@ W3-DataPacker-cli [--install <folder>] [--out <folder>] [--melee] [--movies]
 ```
 
 `--dry-run` writes nothing. It lists what would be packed by folder and by layer, the language, and checks a
-sample of files, so the numbers can be compared with an earlier extraction. With the jar: `java -jar w3-datapacker-0.1.1-all.jar --cli …`
+sample of files, so the numbers can be compared with an earlier extraction. With the jar: `java -jar w3-datapacker-0.1.2-all.jar --cli …`
 
 </details>
 
