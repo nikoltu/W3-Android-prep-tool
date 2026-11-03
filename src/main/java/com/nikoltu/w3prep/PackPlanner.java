@@ -15,7 +15,29 @@ public final class PackPlanner {
 	static final String ROOT = "war3.w3mod";
 	static final String DEFAULT_LOCALE = "enus";
 	static final String NOMEDIA = ".nomedia";
+	static final String MARKER = "w3-datapacker.txt";
 	private static final Set<String> AUDIO_EXTENSIONS = new HashSet<>(Arrays.asList("flac", "ogg", "mp3", "wav"));
+	private static final List<String> MENU_SCENES = Arrays.asList("mainmenu", "mainmenu_tft", "roc_prologue",
+			"roc_human", "roc_undead", "roc_orc", "roc_nightelf", "tft_nightelf", "tft_human", "tft_undead", "tft_orc");
+	// The launcher's Reforged skin: frames, buttons, doors, loading screen parts and the mission pictures.
+	private static final Set<String> WEBUI_SKIN = new HashSet<>(Arrays.asList("webui\\common\\homescreen.jpg",
+			"webui\\common\\wc3tft-logo.png", "webui\\common\\wc3roc-logo.png",
+			"webui\\common\\header-decoration-gold.png", "webui\\campaign\\campaign-select-border.png",
+			"webui\\campaign\\campaign-select-border_hover.png", "webui\\campaign\\campaign-mission-checkmark.png",
+			"webui\\campaign\\rightpanel\\right-panel.png", "webui\\doors\\doors_left.png",
+			"webui\\doors\\doors_right.png", "webui\\doors\\doors_lion_center.png",
+			"webui\\baseframes\\war3_metal_frame_4k.png", "webui\\baseframes\\war3_metal_frame_header_4k.png",
+			"webui\\baseframes\\chain_clasp_4k.png", "webui\\modal\\errormodal\\shrf-head-plate.png",
+			"webui\\modal\\errormodal\\error_icon.png", "webui\\widgets\\buttons\\wc3_btn_blue_normal_4k.png",
+			"webui\\widgets\\buttons\\wc3_btn_blue_down_4k.png", "webui\\widgets\\buttons\\wc3_btn_blue_hover_4k.png",
+			"webui\\widgets\\buttons\\wc3_btn_disabled_normal_4k.png", "webui\\loadingscreen\\loading-bar-4k.png",
+			"webui\\loadingscreen\\loadingscreen-fill-flat.png", "webui\\loadingscreen\\loadingscreen-bar-endcap_4k.png",
+			"webui\\loadingscreen\\top_center_goth_piece.png", "webui\\loadingscreen\\bottom_center_goth_piece.png"));
+	// Read by neither the engine nor the launcher: Reforged shaders, and the Reforged and Forsaken Kingdom
+	// campaigns, whose campaign list (CampaignInfoReforged.txt, CampaignInfoDLC01.txt) the engine does not load.
+	private static final List<String> UNUSED_FOLDERS = Arrays.asList("shaders\\", "campaign\\reforged\\",
+			"campaign\\forsakenkingdom\\", "maps\\forsakenkingdom\\", "sound\\dialogue\\humanrecamp\\",
+			"sound\\dialogue\\undeadrecamp\\");
 
 	private final List<StorageEntry> entries;
 	private final String locale;
@@ -118,6 +140,10 @@ public final class PackPlanner {
 		}
 		planEntries.add(PlanEntry.inline(NOMEDIA, new byte[0]));
 		planEntries.sort(Comparator.comparing(PlanEntry::getZipPath));
+		// Last in the package, so a folder that was only partly unpacked or copied has no marker.
+		final String marker = "tool=W3 Data Packer " + AppInfo.version() + "\nprofile=" + options.describe()
+				+ "\nlocale=" + displayLocale(this.locale) + "\nentries=" + planEntries.size() + "\n";
+		planEntries.add(PlanEntry.inline(MARKER, marker.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
 		Collections.sort(skipped);
 		return new PackPlan("w3-data-classic.zip", "Classic", planEntries, skipped);
 	}
@@ -198,7 +224,12 @@ public final class PackPlanner {
 	private static boolean isExcluded(final String relative, final PackOptions options) {
 		final String top = firstSegment(relative);
 		if (top.equals("webui")) {
-			return true;
+			return !isLauncherWebui(relative, options);
+		}
+		for (final String folder : UNUSED_FOLDERS) {
+			if (relative.startsWith(folder)) {
+				return true;
+			}
 		}
 		if (top.equals("movies") && !options.isMovies()) {
 			return true;
@@ -212,6 +243,27 @@ public final class PackPlanner {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * The launcher plays the menu and campaign scenes Blizzard recorded as webm (Classic "_sd" and Reforged) and draws
+	 * its Reforged skin from a few webui images; the rest of webui is the Battle.net web client.
+	 */
+	static boolean isLauncherWebui(final String relative, final PackOptions options) {
+		if (relative.startsWith("webui\\webms\\")) {
+			final String name = relative.substring("webui\\webms\\".length());
+			for (final String scene : MENU_SCENES) {
+				if (name.equals(scene + ".webm") || name.equals(scene + "_sd.webm")) {
+					return true;
+				}
+			}
+			return false;
+		}
+		if (relative.startsWith("webui\\loadingscreen\\campaign\\roc\\")
+				|| relative.startsWith("webui\\loadingscreen\\campaign\\tft\\")) {
+			return options.getContent() == PackOptions.Content.FULL_CLASSIC;
+		}
+		return WEBUI_SKIN.contains(relative);
 	}
 
 	static boolean isSubMod(final String segment) {

@@ -10,7 +10,9 @@ public final class Main {
 	}
 
 	public static void main(final String[] args) {
-		if (Arrays.asList(args).contains("--cli") || GraphicsEnvironment.isHeadless()) {
+		// jpackage passes the launcher's own "--cli" argument only when the user gives none.
+		if (Arrays.asList(args).contains("--cli") || Boolean.getBoolean("w3prep.cli")
+				|| GraphicsEnvironment.isHeadless()) {
 			System.exit(Cli.run(args));
 			return;
 		}

@@ -60,7 +60,45 @@ class PackPlannerTest {
 		assertTrue(plan.containsKey(".nomedia"));
 		assertTrue(plan.containsKey("ui/y.txt"));
 		assertFalse(plan.containsKey("ui/x.txt"));
-		assertEquals(7, plan.size());
+		assertEquals(8, plan.size());
+	}
+
+	@Test
+	void launcherWebuiAndUnusedFolders() throws Exception {
+		final FakeStorage storage = FakeStorage.classic().add("war3.w3mod\\webui\\webms\\mainmenu_sd.webm", "a")
+				.add("war3.w3mod\\webui\\webms\\tft_orc.webm", "b").add("war3.w3mod\\webui\\webms\\spinner.webm", "c")
+				.add("war3.w3mod\\webui\\campaign\\campaign-select-border.png", "d")
+				.add("war3.w3mod\\webui\\loadingscreen\\campaign\\roc\\02_human\\h1.jpg", "e")
+				.add("war3.w3mod\\webui\\loadingscreen\\campaign\\rebirth\\01_human\\r.jpg", "f")
+				.add("war3.w3mod\\shaders\\ps\\a.bls", "g").add("war3.w3mod\\campaign\\reforged\\roc\\h.w3m", "h")
+				.add("war3.w3mod\\campaign\\classic\\roc\\h.w3m", "i");
+		final Map<String, PlanEntry> full = byPath(classic(storage, PackOptions.defaults()));
+		assertTrue(full.containsKey("webui/webms/mainmenu_sd.webm"));
+		assertTrue(full.containsKey("webui/webms/tft_orc.webm"));
+		assertFalse(full.containsKey("webui/webms/spinner.webm"));
+		assertTrue(full.containsKey("webui/campaign/campaign-select-border.png"));
+		assertTrue(full.containsKey("webui/loadingscreen/campaign/roc/02_human/h1.jpg"));
+		assertFalse(full.containsKey("webui/loadingscreen/campaign/rebirth/01_human/r.jpg"));
+		assertFalse(full.containsKey("shaders/ps/a.bls"));
+		assertFalse(full.containsKey("campaign/reforged/roc/h.w3m"));
+		assertTrue(full.containsKey("campaign/classic/roc/h.w3m"));
+
+		final PackPlan meleePlan = classic(storage, new PackOptions(PackOptions.Content.MELEE_ONLY, false,
+				EnumSet.noneOf(GraphicsSet.class), false));
+		final Map<String, PlanEntry> melee = byPath(meleePlan);
+		assertTrue(melee.containsKey("webui/webms/mainmenu_sd.webm"));
+		assertFalse(melee.containsKey("webui/loadingscreen/campaign/roc/02_human/h1.jpg"));
+		final List<PlanEntry> entries = meleePlan.getEntries();
+		assertEquals(PackPlanner.MARKER, entries.get(entries.size() - 1).getZipPath());
+	}
+
+	@Test
+	void versionsBeforeReforgedAreRecognized() {
+		assertTrue(Analysis.isBeforeReforged("1.30.4.11274"));
+		assertTrue(Analysis.isBeforeReforged("1.31.1.12164"));
+		assertFalse(Analysis.isBeforeReforged("1.32.10.18820"));
+		assertFalse(Analysis.isBeforeReforged("3.0.1.24371"));
+		assertFalse(Analysis.isBeforeReforged(null));
 	}
 
 	@Test

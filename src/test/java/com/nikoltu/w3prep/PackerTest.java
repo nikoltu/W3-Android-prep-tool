@@ -73,8 +73,10 @@ class PackerTest {
 		assertEquals(5, outcome.getFileCount());
 		assertFalse(outcome.isBlocksChecked());
 		try (ZipFile file = new ZipFile(zip.toFile())) {
-			assertEquals(6, file.size());
+			assertEquals(7, file.size());
 			assertEquals(0, file.getEntry(".nomedia").getSize());
+			assertTrue(new String(file.getInputStream(file.getEntry(PackPlanner.MARKER)).readAllBytes(),
+					StandardCharsets.UTF_8).contains("profile=full-classic"));
 			assertEquals(ZipEntry.STORED, file.getEntry("units/human/footman.blp").getMethod());
 			assertEquals(ZipEntry.DEFLATED, file.getEntry("units/human/footman.mdx").getMethod());
 			assertEquals("skins", new String(file.getInputStream(file.getEntry("ui/war3skins.txt")).readAllBytes(),
@@ -138,7 +140,7 @@ class PackerTest {
 		assertEquals(1, outcome.getLeftOut().size());
 		assertEquals("data missing from storage", outcome.getLeftOut().get(0).getReason());
 		try (ZipFile file = new ZipFile(this.out.resolve("w3-data-classic.zip").toFile())) {
-			assertEquals(5, file.size());
+			assertEquals(6, file.size());
 		}
 	}
 

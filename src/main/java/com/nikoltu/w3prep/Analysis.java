@@ -25,6 +25,11 @@ public final class Analysis implements AutoCloseable {
 	}
 
 	public static Analysis open(final Path install) throws PackException {
+		final String installed = GameInstall.readVersion(install);
+		if (isBeforeReforged(installed)) {
+			throw new PackException(PackException.Kind.UNKNOWN_FORMAT, "Game version " + installed
+					+ " is older than 1.32 (Reforged). The W3 app needs the files of 1.32 or newer. Nothing was written.");
+		}
 		GameStorage storage = null;
 		try {
 			storage = new CascGameStorage(install);
@@ -51,6 +56,19 @@ public final class Analysis implements AutoCloseable {
 				} catch (final IOException e) {
 				}
 			}
+		}
+	}
+
+	static boolean isBeforeReforged(final String version) {
+		if (version == null) {
+			return false;
+		}
+		final String[] parts = version.split("\\.");
+		try {
+			final int major = Integer.parseInt(parts[0]);
+			return (major < 1) || ((major == 1) && (parts.length > 1) && (Integer.parseInt(parts[1]) < 32));
+		} catch (final NumberFormatException e) {
+			return false;
 		}
 	}
 
