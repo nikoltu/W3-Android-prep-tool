@@ -1,5 +1,10 @@
 package com.nikoltu.w3prep;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -76,6 +81,14 @@ public final class PackPlanner {
 			"arheiu20m.ttf", "arheiu20_md.ttf", "arlishuu20_db.ttf", "arlishuu30_md.ttf", "ghei00b_t.ttf",
 			"tt5500m_.ttf", "ulei00m.ttf"));
 	private static final Set<String> CJK_LOCALES = new HashSet<>(Arrays.asList("kokr", "zhcn", "zhtw", "jajp"));
+
+	/**
+	 * Files of the graphics packages (_de.w3mod, _hd.w3mod) that the Classic data names and the Classic layers do not
+	 * have: the engine shows Classic graphics but looks a file up in the packages when the Classic layers lack it, as
+	 * the game does. The list is what the melee data, the Classic campaign maps and the Classic models resolve to;
+	 * the skin rows of objects only the Reforged campaigns use are left out.
+	 */
+	static final String CLASSIC_FALLBACK = "/extractor/classic-fallback.txt";
 
 	private final List<StorageEntry> entries;
 	private final String gameVersion;
@@ -168,6 +181,7 @@ public final class PackPlanner {
 		dropLosingAudio(winner, winnerLayer);
 
 		final List<PlanEntry> planEntries = new ArrayList<>(winner.size());
+		addClassicFallback(planEntries, options, skipped);
 		boolean hasUnits = false;
 		boolean hasUi = false;
 		for (final Map.Entry<String, StorageEntry> file : winner.entrySet()) {
@@ -188,6 +202,55 @@ public final class PackPlanner {
 		planEntries.add(PlanEntry.inline(MARKER, markerText(options, planEntries.size() + 1)));
 		Collections.sort(skipped);
 		return new PackPlan("w3-data-classic.zip", "Classic", planEntries, skipped);
+	}
+
+	private void addClassicFallback(final List<PlanEntry> planEntries, final PackOptions options,
+			final List<String> skipped) {
+		final Set<String> wanted = classicFallback();
+		if (wanted.isEmpty()) {
+			return;
+		}
+		for (final StorageEntry entry : this.entries) {
+			final String path = normalize(entry.getPath());
+			if (!path.startsWith(ROOT + "\\")) {
+				continue;
+			}
+			final String relative = path.substring(ROOT.length() + 1);
+			if (!wanted.contains(relative)) {
+				continue;
+			}
+			final int slash = relative.indexOf('\\');
+			if (isExcluded(relative.substring(slash + 1), options, this.locale)) {
+				continue;
+			}
+			if (!entry.isLocal()) {
+				skipped.add(relative);
+				continue;
+			}
+			planEntries.add(new PlanEntry(relative.replace('\\', '/'), entry.getPath(), relative.substring(0, slash),
+					entry.getSize()));
+		}
+	}
+
+	static Set<String> classicFallback() {
+		final Set<String> paths = new HashSet<>();
+		try (InputStream stream = PackPlanner.class.getResourceAsStream(CLASSIC_FALLBACK)) {
+			if (stream == null) {
+				return paths;
+			}
+			final BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
+			String line;
+			while ((line = reader.readLine()) != null) {
+				line = line.trim();
+				if (!line.isEmpty() && !line.startsWith("#")) {
+					paths.add(normalize(line));
+				}
+			}
+		}
+		catch (final IOException e) {
+			throw new IllegalStateException("The list of Classic fallback files cannot be read", e);
+		}
+		return paths;
 	}
 
 	/** The engine's launchers show the tool, the game version and the text language from these fields. */

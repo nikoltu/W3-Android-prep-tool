@@ -53,6 +53,7 @@ flowchart LR
 | --- | --- | --- |
 | Classic game data: units, doodads, interface, sound, music, maps, scripts | ~1.5 GB | The game itself. |
 | Classic campaigns and their spoken lines | ~0.15 GB | Left out with **Melee only**. |
+| `_de.w3mod/`: the few files Classic graphics take from the DE set (weather and blood effects, cinematic heroes, a bridge texture) | ~0.05 GB | Classic data names them, and the Classic files don't have them. |
 | `webui/`: menu and campaign scenes (Classic `_sd` and Reforged `.webm`), Reforged interface art, portraits, loading screens | ~0.27 GB | The launcher's animated backgrounds, its Reforged look and the Reforged loading screen. |
 | `movies/` *(optional)* | ~1.0 GB | Campaign opening and ending movies in one width, with their sound and captions. |
 | `w3-datapacker.txt` | tiny | Written last. Names the tool, the **game version** and the language, which Warsmash shows; a folder without it was not fully unpacked. |
@@ -117,8 +118,9 @@ Press **Create Android package**. After a minute or two `w3-data-classic.zip` is
 
 > [!WARNING]
 > Don't make the folder with `adb shell mkdir` or `adb push` a folder into Warsmash's own app folder
-> (`Android/data/…`): Android does not let the app see folders created that way, and files in them are reported
-> missing. Unpack with a file manager on the device, as above.
+> (`Android/data/…`): files put there by adb or by another app belong to that user and are usually closed to
+> Warsmash, so the folder looks empty or files are reported missing. Unpack with a file manager on the device into
+> a folder such as `Download`, as above.
 
 > [!NOTE]
 > The package contains a `.nomedia` file, so game sounds and pictures don't show up in your music or gallery apps.

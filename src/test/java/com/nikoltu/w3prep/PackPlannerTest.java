@@ -297,4 +297,16 @@ class PackPlannerTest {
 				.markerText(PackOptions.defaults(), 1), java.nio.charset.StandardCharsets.UTF_8);
 		assertFalse(unknown.contains("gameVersion"));
 	}
+	@Test
+	void classicFallbackTakesOnlyListedPackageFiles() throws Exception {
+		final FakeStorage storage = FakeStorage.classic()
+				.add("war3.w3mod\\_de.w3mod\\environment\\weather\\rainheavy.mdx", "listed")
+				.add("war3.w3mod\\_de.w3mod\\units\\human\\footman\\footman.mdx", "not listed")
+				.add("war3.w3mod\\_hd.w3mod\\environment\\weather\\rainheavy.mdx", "other package");
+		final Map<String, PlanEntry> plan = byPath(classic(storage, PackOptions.defaults()));
+		assertEquals("_de.w3mod", plan.get("_de.w3mod/environment/weather/rainheavy.mdx").getLayer());
+		assertFalse(plan.containsKey("_de.w3mod/units/human/footman/footman.mdx"));
+		assertFalse(plan.containsKey("_hd.w3mod/environment/weather/rainheavy.mdx"));
+		assertTrue(PackPlanner.classicFallback().size() > 50);
+	}
 }
