@@ -89,6 +89,12 @@ public final class PackPlanner {
 	 * the skin rows of objects only the Reforged campaigns use are left out.
 	 */
 	static final String CLASSIC_FALLBACK = "/extractor/classic-fallback.txt";
+	/**
+	 * Files of the other graphics package that a set's graphics need (set-de-extra.txt, set-hd-extra.txt): in those
+	 * graphics a name the Classic layers and the set lack is looked up in the other package, so each set carries what
+	 * its graphics reach there, under the same paths, and the folder needs no second set.
+	 */
+	private static final String SET_EXTRA = "/extractor/set-%s-extra.txt";
 
 	private final List<StorageEntry> entries;
 	private final String gameVersion;
@@ -233,8 +239,16 @@ public final class PackPlanner {
 	}
 
 	static Set<String> classicFallback() {
+		return readList(CLASSIC_FALLBACK);
+	}
+
+	static Set<String> setExtra(final GraphicsSet set) {
+		return readList(String.format(Locale.ROOT, SET_EXTRA, set.name().toLowerCase(Locale.ROOT)));
+	}
+
+	private static Set<String> readList(final String resource) {
 		final Set<String> paths = new HashSet<>();
-		try (InputStream stream = PackPlanner.class.getResourceAsStream(CLASSIC_FALLBACK)) {
+		try (InputStream stream = PackPlanner.class.getResourceAsStream(resource)) {
 			if (stream == null) {
 				return paths;
 			}
@@ -248,7 +262,7 @@ public final class PackPlanner {
 			}
 		}
 		catch (final IOException e) {
-			throw new IllegalStateException("The list of Classic fallback files cannot be read", e);
+			throw new IllegalStateException("The file list " + resource + " cannot be read", e);
 		}
 		return paths;
 	}
@@ -293,12 +307,33 @@ public final class PackPlanner {
 			final String zipPath = set.getFolder() + "/" + rest.replace('\\', '/');
 			planEntries.add(new PlanEntry(zipPath, entry.getPath(), set.getFolder(), entry.getSize()));
 		}
+		addSetExtra(set, planEntries, skipped);
 		if (!planEntries.isEmpty()) {
 			planEntries.add(PlanEntry.inline(set.getFolder() + "/" + NOMEDIA, new byte[0]));
 		}
 		planEntries.sort(Comparator.comparing(PlanEntry::getZipPath));
 		Collections.sort(skipped);
 		return new PackPlan(set.getPackageName(), set.getLabel(), planEntries, skipped);
+	}
+
+	private void addSetExtra(final GraphicsSet set, final List<PlanEntry> planEntries, final List<String> skipped) {
+		final Set<String> wanted = setExtra(set);
+		for (final StorageEntry entry : this.entries) {
+			final String path = normalize(entry.getPath());
+			if (!path.startsWith(ROOT + "\\")) {
+				continue;
+			}
+			final String relative = path.substring(ROOT.length() + 1);
+			if (!wanted.contains(relative)) {
+				continue;
+			}
+			if (!entry.isLocal()) {
+				skipped.add(relative);
+				continue;
+			}
+			planEntries.add(new PlanEntry(relative.replace('\\', '/'), entry.getPath(),
+					relative.substring(0, relative.indexOf('\\')), entry.getSize()));
+		}
 	}
 
 	private static void dropLosingAudio(final Map<String, StorageEntry> winner, final Map<String, Integer> winnerLayer) {

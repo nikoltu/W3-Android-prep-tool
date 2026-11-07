@@ -1,0 +1,3 @@
+# Files of the HD set that the DE graphics need and the DE set does not have. Paths below war3.w3mod.
+# Made by resolving every name of the Classic data and maps through the Classic layers and the DE set.
+_hd.w3mod/doodads/lordaeroncapital/structures/capitalbridge/capitalbridge.mdx

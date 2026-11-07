@@ -309,4 +309,26 @@ class PackPlannerTest {
 		assertFalse(plan.containsKey("_hd.w3mod/environment/weather/rainheavy.mdx"));
 		assertTrue(PackPlanner.classicFallback().size() > 50);
 	}
+
+	@Test
+	void graphicsSetCarriesListedFilesOfTheOtherPackage() {
+		final FakeStorage storage = FakeStorage.classic()
+				.add("war3.w3mod\\_hd.w3mod\\units\\a.mdx", "hd")
+				.add("war3.w3mod\\_de.w3mod\\abilities\\spells\\human\\bladedance\\bladedancecaster.mdx", "listed")
+				.add("war3.w3mod\\_de.w3mod\\units\\human\\footman\\footman.mdx", "not listed")
+				.add("war3.w3mod\\_hd.w3mod\\doodads\\lordaeroncapital\\structures\\capitalbridge\\capitalbridge.mdx",
+						"bridge");
+		final PackPlanner planner = new PackPlanner(storage.listEntries());
+		final PackPlan hdPlan = planner.planSet(GraphicsSet.HD);
+		final Map<String, PlanEntry> hd = byPath(hdPlan);
+		final PlanEntry listed = hd.get("_de.w3mod/abilities/spells/human/bladedance/bladedancecaster.mdx");
+		assertEquals("_de.w3mod", listed.getLayer());
+		assertFalse(hd.containsKey("_de.w3mod/units/human/footman/footman.mdx"));
+		assertTrue(hdPlan.getSkipped().isEmpty());
+		final Map<String, PlanEntry> de = byPath(planner.planSet(GraphicsSet.DE));
+		assertTrue(de.containsKey("_de.w3mod/units/human/footman/footman.mdx"));
+		assertTrue(de.containsKey("_hd.w3mod/doodads/lordaeroncapital/structures/capitalbridge/capitalbridge.mdx"));
+		assertFalse(de.containsKey("_hd.w3mod/units/a.mdx"));
+		assertTrue(PackPlanner.setExtra(GraphicsSet.HD).size() > 200);
+	}
 }
