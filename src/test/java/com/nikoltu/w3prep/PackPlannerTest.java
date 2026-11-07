@@ -105,7 +105,8 @@ class PackPlannerTest {
 	void contentExclusions() throws Exception {
 		final FakeStorage storage = FakeStorage.classic().add("war3.w3mod\\movies\\intro.mp4", "movie")
 				.add("war3.w3mod\\webui\\index.html", "web").add("war3.w3mod\\campaign\\human\\a.mdx", "c")
-				.add("war3.w3mod\\maps\\campaign\\human01.w3m", "map").add("war3.w3mod\\maps\\(2)echo.w3x", "melee");
+				.add("war3.w3mod\\maps\\campaign\\human01.w3m", "map").add("war3.w3mod\\maps\\(2)echo.w3x", "melee")
+				.add("war3.w3mod\\sound\\dialogue\\humancampaign\\h.mp3", "line");
 		final Map<String, PlanEntry> full = byPath(classic(storage, PackOptions.defaults()));
 		assertFalse(full.containsKey("movies/intro.mp4"));
 		assertFalse(full.containsKey("webui/index.html"));
@@ -119,6 +120,8 @@ class PackPlannerTest {
 		assertFalse(melee.containsKey("campaign/human/a.mdx"));
 		assertFalse(melee.containsKey("maps/campaign/human01.w3m"));
 		assertTrue(melee.containsKey("maps/(2)echo.w3x"));
+		assertFalse(melee.containsKey("sound/dialogue/humancampaign/h.mp3"));
+		assertTrue(full.containsKey("sound/dialogue/humancampaign/h.mp3"));
 	}
 
 	@Test
@@ -191,5 +194,107 @@ class PackPlannerTest {
 		assertTrue(hd.containsKey("_hd.w3mod/.nomedia"));
 		assertEquals(4, hd.size());
 		assertEquals(0, planner.planSet(GraphicsSet.DE).getFileCount());
+	}
+
+	@Test
+	void engineWebuiFilesAreKept() throws Exception {
+		final FakeStorage storage = FakeStorage.classic().add("war3.w3mod\\webui\\portraits\\p001.png", "a")
+				.add("war3.w3mod\\webui\\baseframes\\war3_stone_bg_landscape_4k.png", "b")
+				.add("war3.w3mod\\webui\\icons\\versus\\orc-icon-resting.png", "c")
+				.add("war3.w3mod\\webui\\icons\\versus\\orc-icon-hover.png", "d")
+				.add("war3.w3mod\\webui\\loadingscreen\\loadscreen_dragonlineart.png", "e")
+				.add("war3.w3mod\\webui\\loadingscreen\\campaign\\crests\\wc3_map_raceicon_orc.png", "f")
+				.add("war3.w3mod\\webui\\loadingscreen\\campaign\\roc_credits.jpg", "g")
+				.add("war3.w3mod\\webui\\doors\\doors_left.png", "h")
+				.add("war3.w3mod\\webui\\credits\\a.png", "i");
+		final Map<String, PlanEntry> full = byPath(classic(storage, PackOptions.defaults()));
+		assertTrue(full.containsKey("webui/portraits/p001.png"));
+		assertTrue(full.containsKey("webui/baseframes/war3_stone_bg_landscape_4k.png"));
+		assertTrue(full.containsKey("webui/icons/versus/orc-icon-resting.png"));
+		assertFalse(full.containsKey("webui/icons/versus/orc-icon-hover.png"));
+		assertTrue(full.containsKey("webui/loadingscreen/loadscreen_dragonlineart.png"));
+		assertTrue(full.containsKey("webui/loadingscreen/campaign/crests/wc3_map_raceicon_orc.png"));
+		assertTrue(full.containsKey("webui/loadingscreen/campaign/roc_credits.jpg"));
+		assertFalse(full.containsKey("webui/doors/doors_left.png"));
+		assertFalse(full.containsKey("webui/credits/a.png"));
+
+		final Map<String, PlanEntry> melee = byPath(classic(storage, new PackOptions(PackOptions.Content.MELEE_ONLY,
+				false, EnumSet.noneOf(GraphicsSet.class), false)));
+		assertTrue(melee.containsKey("webui/loadingscreen/campaign/crests/wc3_map_raceicon_orc.png"));
+		assertFalse(melee.containsKey("webui/loadingscreen/campaign/roc_credits.jpg"));
+	}
+
+	@Test
+	void dataTheEngineDoesNotReadIsLeftOut() throws Exception {
+		final FakeStorage storage = FakeStorage.classic().add("war3.w3mod\\cinematics\\a0m1\\a.mdx", "a")
+				.add("war3.w3mod\\units\\human\\fx.pkb", "b").add("war3.w3mod\\units\\human\\fx.pkmm", "c")
+				.add("war3.w3mod\\collection\\collection.json", "d").add("war3.w3mod\\battlenet\\bn.ini", "e")
+				.add("war3.w3mod\\achievement\\a.json", "f").add("war3.w3mod\\editor\\t\\c.pkcf", "g")
+				.add("war3.w3mod\\fonts\\ulei00m.ttf", "h").add("war3.w3mod\\fonts\\frizqt__.ttf", "i")
+				.add("war3.w3mod\\fonts\\nimrodmt.ttf", "j").add("war3.w3mod\\filealiases.json", "k");
+		final Map<String, PlanEntry> full = byPath(classic(storage, PackOptions.defaults()));
+		assertFalse(full.containsKey("cinematics/a0m1/a.mdx"));
+		assertFalse(full.containsKey("units/human/fx.pkb"));
+		assertFalse(full.containsKey("units/human/fx.pkmm"));
+		assertFalse(full.containsKey("collection/collection.json"));
+		assertFalse(full.containsKey("battlenet/bn.ini"));
+		assertFalse(full.containsKey("achievement/a.json"));
+		assertFalse(full.containsKey("editor/t/c.pkcf"));
+		assertFalse(full.containsKey("fonts/ulei00m.ttf"));
+		assertTrue(full.containsKey("fonts/frizqt__.ttf"));
+		assertTrue(full.containsKey("fonts/nimrodmt.ttf"));
+		assertTrue(full.containsKey("filealiases.json"));
+	}
+
+	@Test
+	void eastAsianLanguagesKeepTheirFonts() throws Exception {
+		final FakeStorage storage = FakeStorage.classic().add("war3.w3mod\\fonts\\ulei00m.ttf", "h")
+				.add("war3.w3mod\\_locales\\kokr.w3mod\\ui\\a.txt", "ko");
+		final PackPlanner planner = new PackPlanner(storage.listEntries());
+		assertEquals("kokr", planner.getLocale());
+		assertTrue(byPath(planner.planClassic(PackOptions.defaults())).containsKey("fonts/ulei00m.ttf"));
+	}
+
+	@Test
+	void moviesComeInOneWidthWithTheirSoundAndCaptions() throws Exception {
+		final FakeStorage storage = FakeStorage.classic().add("war3.w3mod\\movies\\humaned_640.avi", "a")
+				.add("war3.w3mod\\movies\\humaned_1280.avi", "b").add("war3.w3mod\\movies\\humaned_1920.avi", "c")
+				.add("war3.w3mod\\movies\\audio\\blizzardlogo.ogg", "d")
+				.add("war3.w3mod\\_locales\\enus.w3mod\\movies\\audio\\humaned.ogg", "e")
+				.add("war3.w3mod\\_locales\\enus.w3mod\\movies\\captions\\humaned.srt", "f")
+				.add("war3.w3mod\\_locales\\dede.w3mod\\movies\\audio\\humaned.ogg", "g")
+				.add("war3.w3mod\\_teen.w3mod\\movies\\humaned_1920.avi", "h");
+		assertFalse(byPath(classic(storage, PackOptions.defaults())).containsKey("movies/humaned_1920.avi"));
+		final Map<String, PlanEntry> movies = byPath(classic(storage, new PackOptions(
+				PackOptions.Content.FULL_CLASSIC, true, EnumSet.noneOf(GraphicsSet.class), false)));
+		assertTrue(movies.containsKey("movies/humaned_1920.avi"));
+		assertFalse(movies.containsKey("movies/humaned_1280.avi"));
+		assertFalse(movies.containsKey("movies/humaned_640.avi"));
+		assertTrue(movies.containsKey("movies/audio/blizzardlogo.ogg"));
+		assertEquals("_locales\\enus", movies.get("movies/audio/humaned.ogg").getLayer());
+		assertTrue(movies.containsKey("movies/captions/humaned.srt"));
+		final Map<String, PlanEntry> small = byPath(classic(storage, new PackOptions(PackOptions.Content.FULL_CLASSIC,
+				true, 640, EnumSet.noneOf(GraphicsSet.class), false)));
+		assertTrue(small.containsKey("movies/humaned_640.avi"));
+		assertFalse(small.containsKey("movies/humaned_1920.avi"));
+		assertThrows(IllegalArgumentException.class, () -> new PackOptions(PackOptions.Content.FULL_CLASSIC, true,
+				800, EnumSet.noneOf(GraphicsSet.class), false));
+	}
+
+	@Test
+	void markerNamesToolGameVersionAndLanguage() throws Exception {
+		final PackPlan plan = new PackPlanner(FakeStorage.classic().listEntries(), "3.0.1.24371")
+				.planClassic(PackOptions.defaults());
+		final List<PlanEntry> entries = plan.getEntries();
+		final PlanEntry marker = entries.get(entries.size() - 1);
+		assertEquals(PackPlanner.MARKER, marker.getZipPath());
+		final String text = new String(marker.getInlineContent(), java.nio.charset.StandardCharsets.UTF_8);
+		assertTrue(text.startsWith("tool=Reforged Extractor toolkit "));
+		assertTrue(text.contains("\ngameVersion=3.0.1.24371\n"));
+		assertTrue(text.contains("\nlocale=enUS\n"));
+		assertTrue(text.contains("\nentries=" + entries.size() + "\n"));
+		final String unknown = new String(new PackPlanner(FakeStorage.classic().listEntries(), "unknown")
+				.markerText(PackOptions.defaults(), 1), java.nio.charset.StandardCharsets.UTF_8);
+		assertFalse(unknown.contains("gameVersion"));
 	}
 }

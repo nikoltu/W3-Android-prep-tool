@@ -44,7 +44,7 @@ final class DoneScreen extends JPanel {
 
 		final JLabel badge = new JLabel(new Glyph(Glyph.Shape.CHECK, 40, Theme.OK, Theme.OK_BG));
 		final JPanel titles = Ui.column(2);
-		titles.add(Ui.title("Your tablet package is ready"));
+		titles.add(Ui.title("Your Android package is ready"));
 		titles.add(this.summary);
 		final JPanel header = new JPanel(new BorderLayout(14, 0));
 		header.setOpaque(false);
@@ -55,16 +55,16 @@ final class DoneScreen extends JPanel {
 		body.add(Ui.fieldRow(this.pathField, this.showInFolderButton));
 		body.add(this.extras);
 
-		this.stepsCard.add(Ui.heading("Put it on the tablet"));
-		addStep(1, "Connect the tablet by USB and choose File transfer.");
-		addStep(2, "Copy the ZIP into the tablet's Download folder.");
-		addStep(3, "Unpack it on the tablet with a file manager (Extract).");
-		addStep(4, "In W3, choose the unpacked folder, the one with units and ui inside.");
+		this.stepsCard.add(Ui.heading("Put it on the Android device"));
+		addStep(1, "Connect the device by USB and choose File transfer.");
+		addStep(2, "Copy the ZIP into the device's Download folder.");
+		addStep(3, "Unpack it on the device with a file manager (Extract).");
+		addStep(4, "In Warsmash, choose the unpacked folder, the one with units and ui inside.");
 		this.cards.setOpaque(false);
 		this.cards.add(this.stepsCard);
 		body.add(this.cards);
 
-		body.add(Ui.notice("W3 reads a folder, not the ZIP. Unpack on the tablet, not on the PC: one file copies "
+		body.add(Ui.notice("Warsmash reads a folder, not the ZIP. Unpack on the device, not on the PC: one file copies "
 				+ "much faster than thousands.", Theme.WARN_BG, Theme.WARN));
 
 		final JPanel spacer = new JPanel();
@@ -177,7 +177,7 @@ final class DoneScreen extends JPanel {
 					10, 7, 10);
 			command.add(new WrapText(Adb.pushCommand(this.packageFile), Theme.mono(), Theme.SOFT));
 			this.adbCard.add(command);
-			final JButton send = Ui.outlineGold("Send to tablet");
+			final JButton send = Ui.outlineGold("Send to device");
 			send.addActionListener(e -> send(device, send));
 			this.adbCard.add(Ui.row(0, send));
 			this.adbCard.add(Ui.label("Then steps 3 and 4 on the left.", Theme.body(12f), Theme.MUTED));
@@ -185,8 +185,8 @@ final class DoneScreen extends JPanel {
 			final boolean unauthorized = devices != null
 					&& devices.stream().anyMatch(device -> "unauthorized".equals(device.getState()));
 			final String text = ready.size() > 1 ? "More than one device is connected. Unplug the others."
-					: unauthorized ? "Allow USB debugging on the tablet when it asks."
-							: "No tablet found. Connect it with USB debugging turned on.";
+					: unauthorized ? "Allow USB debugging on the device when it asks."
+							: "No Android device found. Connect it with USB debugging turned on.";
 			this.adbCard.add(Ui.text(text, Theme.MUTED));
 			this.adbCard.add(checkAgain());
 		}
@@ -236,8 +236,8 @@ final class DoneScreen extends JPanel {
 					status.setText("Sent to " + device.getName() + ", Download folder.");
 					status.setForeground(Theme.OK);
 				} else {
-					status.setText("<html>The tablet did not accept the file (" + failure + "). Check the cable and "
-							+ "that the tablet is unlocked, then send again, or copy by USB.</html>");
+					status.setText("<html>The device did not accept the file (" + failure + "). Check the cable and "
+							+ "that the device is unlocked, then send again, or copy by USB.</html>");
 					status.setForeground(Theme.ERR);
 					send.setEnabled(true);
 				}

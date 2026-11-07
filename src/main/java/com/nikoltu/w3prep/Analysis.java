@@ -18,7 +18,7 @@ public final class Analysis implements AutoCloseable {
 	public Analysis(final Path install, final GameStorage storage) throws IOException {
 		this.install = install;
 		this.storage = storage;
-		this.planner = new PackPlanner(storage.listEntries());
+		this.planner = new PackPlanner(storage.listEntries(), storage.getVersion());
 		for (final GraphicsSet set : GraphicsSet.values()) {
 			this.setPlans.put(set, this.planner.planSet(set));
 		}
@@ -28,7 +28,7 @@ public final class Analysis implements AutoCloseable {
 		final String installed = GameInstall.readVersion(install);
 		if (isBeforeReforged(installed)) {
 			throw new PackException(PackException.Kind.UNKNOWN_FORMAT, "Game version " + installed
-					+ " is older than 1.32 (Reforged). The W3 app needs the files of 1.32 or newer. Nothing was written.");
+					+ " is older than 1.32 (Reforged). Warsmash needs the files of 1.32 or newer. Nothing was written.");
 		}
 		GameStorage storage = null;
 		try {

@@ -13,12 +13,14 @@ public final class Cli {
 	}
 
 	static final String USAGE = String.join(System.lineSeparator(),
-			"W3 Data Packer " + AppInfo.fullVersion() + ", command line", "",
+			AppInfo.NAME + " " + AppInfo.fullVersion() + ", command line", "",
 			"  --install <folder>   game install folder (default: found automatically)",
 			"  --out <folder>       where packages go (default: Downloads)",
-			"  --melee              melee only, no campaign files", "  --movies             include movies",
+			"  --melee              melee only, no campaign files",
+			"  --movies             include the movies, one width (default 1920)",
+			"  --movie-width <w>    movie width: 1920, 1280 or 640 (implies --movies)",
 			"  --set de|hd          also make a graphics set package (experimental)",
-			"  --desktop-folder     also write a plain folder and warsmash-data.ini",
+			"  --desktop-folder     also write a plain folder and warsmash-data.ini for desktop Warsmash",
 			"  --dry-run            show what would be packed, write nothing",
 			"  --allow-missing      make the package even if some files can't be read",
 			"  --send               after packing, push the Classic package with adb", "",
@@ -32,7 +34,7 @@ public final class Cli {
 		if (!onlyCli) {
 			return runSafely(args);
 		}
-		System.out.println("W3 Data Packer " + AppInfo.fullVersion());
+		System.out.println(AppInfo.NAME + " " + AppInfo.fullVersion());
 		System.out.println("No options given, so this only shows what would be packed and writes nothing.");
 		System.out.println("Run it from a command prompt with --help to see all options.");
 		System.out.println();
@@ -66,6 +68,7 @@ public final class Cli {
 		Path out = null;
 		PackOptions.Content content = PackOptions.Content.FULL_CLASSIC;
 		boolean movies = false;
+		int movieWidth = PackOptions.DEFAULT_MOVIE_WIDTH;
 		boolean desktopFolder = false;
 		boolean dryRun = false;
 		boolean send = false;
@@ -87,6 +90,13 @@ public final class Cli {
 					break;
 				case "--movies":
 					movies = true;
+					break;
+				case "--movie-width":
+					movies = true;
+					movieWidth = Integer.parseInt(args[++i]);
+					if (!PackOptions.isMovieWidth(movieWidth)) {
+						throw new IllegalArgumentException("movie width " + movieWidth);
+					}
 					break;
 				case "--set":
 					sets.add(GraphicsSet.valueOf(args[++i].toUpperCase(Locale.ROOT)));
@@ -120,7 +130,7 @@ public final class Cli {
 
 		final AppLog log = AppLog.open(true);
 		final Settings settings = Settings.load();
-		final PackOptions options = new PackOptions(content, movies, sets, desktopFolder);
+		final PackOptions options = new PackOptions(content, movies, movieWidth, sets, desktopFolder);
 		try {
 			final Path folder = install != null ? GameInstall.resolve(install)
 					: GameInstall.locate(settings.getInstallFolder());
@@ -186,7 +196,7 @@ public final class Cli {
 				for (final Path packageFile : outcome.getPackages()) {
 					log.info("  " + packageFile);
 				}
-				log.info("Copy the ZIP to the tablet, unpack it there, then choose the unpacked folder in W3.");
+				log.info("Copy the ZIP to the Android device, unpack it there, then choose the unpacked folder in Warsmash.");
 				if (send) {
 					return send(outcome.getPackages().get(0), log);
 				}
@@ -214,13 +224,13 @@ public final class Cli {
 			final List<Adb.Device> ready = adb.devices().stream().filter(Adb.Device::isReady)
 					.collect(java.util.stream.Collectors.toList());
 			if (ready.size() != 1) {
-				log.info(ready.isEmpty() ? "No authorised tablet is connected." : "More than one device is connected.");
+				log.info(ready.isEmpty() ? "No authorised Android device is connected." : "More than one device is connected.");
 				return 8;
 			}
 			log.info(Adb.pushCommand(packageFile) + " → " + ready.get(0).getName());
 			adb.push(ready.get(0), packageFile, bytes -> {
 			});
-			log.info("sent. Unpack it on the tablet, then choose the unpacked folder in W3.");
+			log.info("sent. Unpack it on the device, then choose the unpacked folder in Warsmash.");
 			return 0;
 		} catch (final IOException e) {
 			log.info("adb: " + e.getMessage());

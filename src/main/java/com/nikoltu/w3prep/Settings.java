@@ -22,8 +22,13 @@ public final class Settings {
 
 	public static Settings load() {
 		final Settings settings = new Settings(AppInfo.dataFolder().resolve("settings.properties"));
-		if (Files.isRegularFile(settings.file)) {
-			try (InputStream in = Files.newInputStream(settings.file)) {
+		// The tool's earlier name kept its settings in a folder of that name.
+		final Path earlier = AppInfo.dataFolder()
+				.resolveSibling(Platform.isWindows() || Platform.isMac() ? "W3-DataPacker" : "w3-datapacker")
+				.resolve("settings.properties");
+		final Path source = Files.isRegularFile(settings.file) ? settings.file : earlier;
+		if (Files.isRegularFile(source)) {
+			try (InputStream in = Files.newInputStream(source)) {
 				settings.properties.load(in);
 			} catch (final IOException e) {
 			}
@@ -35,7 +40,7 @@ public final class Settings {
 		try {
 			Files.createDirectories(this.file.getParent());
 			try (OutputStream out = Files.newOutputStream(this.file)) {
-				this.properties.store(out, "W3 Data Packer");
+				this.properties.store(out, AppInfo.NAME);
 			}
 		} catch (final IOException e) {
 		}

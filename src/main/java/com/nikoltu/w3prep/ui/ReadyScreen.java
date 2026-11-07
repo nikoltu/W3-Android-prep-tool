@@ -32,9 +32,9 @@ final class ReadyScreen extends JPanel {
 	final JButton chooseInstallButton = Ui.button("Choose…");
 	final JButton changeOutputButton = Ui.button("Change…");
 	final JButton advancedButton = Ui.link("Advanced", new Glyph(Glyph.Shape.CHEVRON_RIGHT, 12, Theme.GOLD_HI));
-	final JButton createButton = Ui.primary("Create tablet package");
+	final JButton createButton = Ui.primary("Create Android package");
 
-	private final JLabel title = Ui.title("Ready to make the tablet package");
+	private final JLabel title = Ui.title("Ready to make the Android package");
 	private final WrapText subtitle = Ui.sub("");
 	private final RoundPanel installCard = Ui.card();
 	private final JTextField installField = Ui.pathField("Game install folder");
@@ -84,9 +84,9 @@ final class ReadyScreen extends JPanel {
 		final ButtonGroup content = new ButtonGroup();
 		content.add(this.fullClassic);
 		content.add(this.meleeOnly);
-		this.fullRow = new OptionRow(this.fullClassic, "Melee, campaigns, sound, music. What the tablet needs.", true);
+		this.fullRow = new OptionRow(this.fullClassic, "Melee, campaigns, sound, music. What the game needs.", true);
 		this.meleeRow = new OptionRow(this.meleeOnly, "Skips campaign maps and campaign assets.", true);
-		this.moviesRow = new OptionRow(this.movies, "The tablet does not play them yet.", false);
+		this.moviesRow = new OptionRow(this.movies, "Campaign opening and ending movies, 1920 pixels wide.", false);
 		this.advancedPanel = Ui.quietCard();
 		this.advancedPanel.setLayout(new ColumnLayout(14));
 		final JPanel contentGroup = Ui.column(8);
@@ -109,7 +109,7 @@ final class ReadyScreen extends JPanel {
 
 		final JPanel desktopGroup = Ui.column(8);
 		desktopGroup.add(Ui.heading("Desktop build"));
-		desktopGroup.add(new OptionRow(this.desktopFolder, "For the PC build of the engine. Not needed for the tablet.",
+		desktopGroup.add(new OptionRow(this.desktopFolder, "A plain folder for the desktop build of Warsmash. Not needed on Android.",
 				false));
 		this.advancedPanel.add(desktopGroup);
 		this.advancedPanel.setVisible(false);
@@ -157,7 +157,7 @@ final class ReadyScreen extends JPanel {
 	}
 
 	void showChecking(final Path folder) {
-		this.title.setText("Ready to make the tablet package");
+		this.title.setText("Ready to make the Android package");
 		this.subtitle.setText("Looking for your game install…");
 		this.installField.setText(folder == null ? "" : folder.toString());
 		this.installStatus.removeAll();
@@ -170,7 +170,7 @@ final class ReadyScreen extends JPanel {
 	}
 
 	void showFound(final Path install, final String version, final String language) {
-		this.title.setText("Ready to make the tablet package");
+		this.title.setText("Ready to make the Android package");
 		this.subtitle.setText("Your game install was found. Nothing in it will be changed.");
 		this.installField.setText(install.toString());
 		this.installStatus.removeAll();
@@ -185,7 +185,7 @@ final class ReadyScreen extends JPanel {
 	}
 
 	void showInstallProblem(final Path tried, final String message, final boolean nothingFound) {
-		this.title.setText(nothingFound ? "Where is the game installed?" : "Ready to make the tablet package");
+		this.title.setText(nothingFound ? "Where is the game installed?" : "Ready to make the Android package");
 		this.subtitle.setText(nothingFound ? "No install was found in the usual places. Pick its folder once; it is "
 				+ "remembered." : "This folder can't be used. Pick another one.");
 		this.installField.setText(tried == null ? "" : tried.toString());
@@ -242,7 +242,8 @@ final class ReadyScreen extends JPanel {
 		row.setEnabled(available);
 		row.setSize(available ? size : "–");
 		row.setDescription(available
-				? "Separate package " + set.getPackageName() + ". The engine does not use it yet."
+				? "Separate package " + set.getPackageName()
+						+ ". Unpack into the same folder; Warsmash takes from it only what Classic lacks."
 				: "Not on this install.");
 	}
 

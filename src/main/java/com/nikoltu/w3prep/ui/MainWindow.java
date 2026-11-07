@@ -521,7 +521,7 @@ public final class MainWindow {
 	private static List<Image> loadIcons() {
 		final List<Image> icons = new ArrayList<>();
 		for (final int size : new int[] { 16, 24, 32, 48, 64, 256 }) {
-			try (InputStream in = MainWindow.class.getResourceAsStream("/datapacker/icon-" + size + ".png")) {
+			try (InputStream in = MainWindow.class.getResourceAsStream("/extractor/icon-" + size + ".png")) {
 				if (in != null) {
 					icons.add(ImageIO.read(in));
 				}

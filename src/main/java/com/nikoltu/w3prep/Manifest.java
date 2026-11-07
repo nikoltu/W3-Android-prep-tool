@@ -23,7 +23,7 @@ public final class Manifest {
 			final List<WrittenFile> files, final List<ReadFailure> leftOut) throws IOException {
 		try (BufferedWriter out = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
 			out.write("{\n");
-			field(out, "tool", "W3 Data Packer");
+			field(out, "tool", AppInfo.NAME);
 			field(out, "toolVersion", AppInfo.version());
 			field(out, "package", packageName);
 			field(out, "gameVersion", gameVersion);

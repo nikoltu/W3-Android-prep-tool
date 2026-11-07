@@ -163,7 +163,7 @@ public final class Packer {
 			Path ini = null;
 			if (options.isDesktopFolder()) {
 				progress.setPhase(Progress.Phase.DESKTOP_FOLDER);
-				ini = DesktopFolder.write(outputFolder, packages, new ArrayList<>(options.getSets()), progress);
+				ini = DesktopFolder.write(outputFolder, packages, progress);
 				log.info("desktop folder written, " + ini);
 			}
 			progress.setPhase(Progress.Phase.DONE);

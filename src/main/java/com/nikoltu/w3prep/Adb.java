@@ -148,7 +148,7 @@ public final class Adb {
 		final long arrived = remoteSize(device, remote);
 		progress.accept(arrived);
 		if (arrived != size) {
-			throw new IOException("the file on the tablet has " + arrived + " bytes, expected " + size);
+			throw new IOException("the file on the device has " + arrived + " bytes, expected " + size);
 		}
 	}
 

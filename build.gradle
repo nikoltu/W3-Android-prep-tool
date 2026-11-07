@@ -3,10 +3,10 @@ plugins {
     id 'application'
 }
 
-def packerVersion = '0.1.2'
+def packerVersion = '0.2.0'
 def mainClassName = 'com.nikoltu.w3prep.Main'
 def launcherClassName = 'com.nikoltu.w3prep.Launcher'
-def appName = 'W3-DataPacker'
+def appName = 'Reforged-Extractor'
 
 group = 'com.nikoltu'
 version = packerVersion
@@ -62,17 +62,17 @@ def buildId = (System.getenv('GITHUB_SHA') ?: 'local').take(7)
 tasks.named('processResources') {
     inputs.property('version', packerVersion)
     inputs.property('build', buildId)
-    filesMatching('datapacker/version.properties') {
+    filesMatching('extractor/version.properties') {
         expand(version: packerVersion, build: buildId)
     }
 }
 
 tasks.named('jar') {
-    archiveBaseName = 'w3-datapacker'
+    archiveBaseName = 'reforged-extractor'
     from sourceSets.launcher.output
     manifest {
         attributes 'Main-Class': launcherClassName,
-                'Implementation-Title': 'W3 Data Packer',
+                'Implementation-Title': 'Reforged Extractor toolkit',
                 'Implementation-Version': packerVersion
     }
 }
@@ -107,16 +107,16 @@ def jlinkRuntime = tasks.register('jlinkRuntime', Exec) {
 def jpackageImage = tasks.register('jpackageImage', Exec) {
     dependsOn copyAppInput, jlinkRuntime
     doFirst { delete "$packageDir/image" }
-    def iconFile = file(isWindows ? 'packaging/W3-DataPacker.ico' : (isMac ? 'packaging/W3-DataPacker.icns' : 'packaging/icon-256.png'))
+    def iconFile = file(isWindows ? 'packaging/Reforged-Extractor.ico' : (isMac ? 'packaging/Reforged-Extractor.icns' : 'packaging/icon-256.png'))
     def command = ["$jdkBin/jpackage",
             '--type', 'app-image',
             '--name', appName,
             '--app-version', bundleVersion,
             '--vendor', 'nikoltu',
-            '--description', 'W3 Data Packer',
+            '--description', 'Reforged Extractor toolkit',
             '--copyright', 'Code under AGPL-3.0. Contains no game files.',
             '--input', "$packageDir/input",
-            '--main-jar', "w3-datapacker-${packerVersion}.jar",
+            '--main-jar', "reforged-extractor-${packerVersion}.jar",
             '--main-class', mainClassName,
             '--runtime-image', "$packageDir/runtime",
             '--java-options', '-Xmx1536m',
@@ -124,7 +124,7 @@ def jpackageImage = tasks.register('jpackageImage', Exec) {
             '--add-launcher', "${appName}-cli=${file('packaging/cli-launcher.properties').absolutePath}",
             '--dest', "$packageDir/image"]
     if (isMac) {
-        command += ['--mac-package-identifier', 'com.nikoltu.w3prep', '--mac-package-name', 'W3 Data Packer']
+        command += ['--mac-package-identifier', 'com.nikoltu.w3prep', '--mac-package-name', 'Reforged Extractor']
     }
     commandLine command
 }
@@ -169,13 +169,13 @@ tasks.register('distArchive', Exec) {
 tasks.register('allJar', Jar) {
     description = 'One jar with everything, for any OS with Java 17 or newer.'
     group = 'distribution'
-    archiveBaseName = 'w3-datapacker'
+    archiveBaseName = 'reforged-extractor'
     archiveClassifier = 'all'
     destinationDirectory = distDir
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
         attributes 'Main-Class': launcherClassName,
-                'Implementation-Title': 'W3 Data Packer',
+                'Implementation-Title': 'Reforged Extractor toolkit',
                 'Implementation-Version': packerVersion
     }
     from sourceSets.launcher.output

@@ -27,7 +27,7 @@ jobs:
         run: ./gradlew test distArchive allJar --no-daemon
       - uses: actions/upload-artifact@v4
         with:
-          name: W3-DataPacker-${{ runner.os }}
+          name: Reforged-Extractor-${{ runner.os }}
           path: |
-            build/distributions/W3-DataPacker-*
+            build/distributions/Reforged-Extractor-*
             build/distributions/*-all.jar

@@ -8,7 +8,7 @@ import java.nio.file.Paths;
 import java.util.Properties;
 
 public final class AppInfo {
-	public static final String NAME = "W3 Data Packer";
+	public static final String NAME = "Reforged Extractor toolkit";
 	private static String version;
 	private static String build;
 
@@ -19,7 +19,7 @@ public final class AppInfo {
 		if (version == null) {
 			version = "dev";
 			build = "local";
-			try (InputStream in = AppInfo.class.getResourceAsStream("/datapacker/version.properties")) {
+			try (InputStream in = AppInfo.class.getResourceAsStream("/extractor/version.properties")) {
 				if (in != null) {
 					final Properties properties = new Properties();
 					properties.load(in);
@@ -43,18 +43,18 @@ public final class AppInfo {
 		if (Platform.isWindows()) {
 			final String localAppData = System.getenv("LOCALAPPDATA");
 			if ((localAppData != null) && !localAppData.isEmpty()) {
-				return Paths.get(localAppData, "W3-DataPacker");
+				return Paths.get(localAppData, "Reforged-Extractor");
 			}
-			return Paths.get(home, "AppData", "Local", "W3-DataPacker");
+			return Paths.get(home, "AppData", "Local", "Reforged-Extractor");
 		}
 		if (Platform.isMac()) {
-			return Paths.get(home, "Library", "Application Support", "W3-DataPacker");
+			return Paths.get(home, "Library", "Application Support", "Reforged-Extractor");
 		}
 		final String xdg = System.getenv("XDG_DATA_HOME");
 		if ((xdg != null) && !xdg.isEmpty()) {
-			return Paths.get(xdg, "w3-datapacker");
+			return Paths.get(xdg, "reforged-extractor");
 		}
-		return Paths.get(home, ".local", "share", "w3-datapacker");
+		return Paths.get(home, ".local", "share", "reforged-extractor");
 	}
 
 	public static Path logFolder() {

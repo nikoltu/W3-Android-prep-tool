@@ -222,6 +222,27 @@ class PackerTest {
 		assertEquals(PackException.Kind.BAD_OUTPUT, error.getKind());
 	}
 
+	@Test
+	void desktopFolderReplacesOnlyWhenComplete() throws Exception {
+		final PackOptions options = new PackOptions(PackOptions.Content.FULL_CLASSIC, false,
+				EnumSet.noneOf(GraphicsSet.class), true);
+		final Path part = this.out.resolve("w3-data-classic.part");
+		Files.createDirectories(part);
+		Files.writeString(part.resolve(".reforged-extractor"), "left from a stopped run");
+		Files.writeString(part.resolve("half.txt"), "half");
+		run(storage(), options, new Progress(1, 1, true));
+		assertFalse(Files.exists(part));
+		final Path folder = this.out.resolve("w3-data-classic");
+		assertFalse(Files.exists(folder.resolve("half.txt")));
+		assertTrue(Files.isRegularFile(folder.resolve(".reforged-extractor")));
+		assertTrue(Files.isRegularFile(folder.resolve(PackPlanner.MARKER)));
+
+		Files.createDirectories(part);
+		final PackException error = assertThrows(PackException.class,
+				() -> run(storage(), options, new Progress(1, 1, true)));
+		assertEquals(PackException.Kind.BAD_OUTPUT, error.getKind());
+	}
+
 	private void assertNoPartFiles() throws IOException {
 		try (Stream<Path> files = Files.list(this.out)) {
 			assertTrue(files.noneMatch(file -> file.toString().endsWith(".part")));

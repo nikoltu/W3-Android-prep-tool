@@ -35,7 +35,7 @@ jobs:
         with:
           name: package-${{ runner.os }}
           path: |
-            build/distributions/W3-DataPacker-*
+            build/distributions/Reforged-Extractor-*
             build/distributions/*-all.jar
 
   release:
@@ -62,17 +62,17 @@ jobs:
 
           | System | File |
           | --- | --- |
-          | Windows 10/11 (64-bit) | \`W3-DataPacker-${version}-windows-x64.zip\` |
-          | macOS (Apple Silicon) | \`W3-DataPacker-${version}-macos-arm64.zip\` |
-          | Linux (x64) | \`W3-DataPacker-${version}-linux-x64.tar.gz\` |
-          | Any system with Java 17+ | \`w3-datapacker-${version}-all.jar\` |
+          | Windows 10/11 (64-bit) | \`Reforged-Extractor-${version}-windows-x64.zip\` |
+          | macOS (Apple Silicon) | \`Reforged-Extractor-${version}-macos-arm64.zip\` |
+          | Linux (x64) | \`Reforged-Extractor-${version}-linux-x64.tar.gz\` |
+          | Any system with Java 17+ | \`reforged-extractor-${version}-all.jar\` |
 
-          The tool makes \`w3-data-classic.zip\` from your own game install. Copy it to the tablet, unpack it there, then choose the unpacked folder in W3. See the README for the steps.
+          The tool makes \`w3-data-classic.zip\` from your own game install. Copy it to the Android device, unpack it there, then choose the unpacked folder in Warsmash. See the README for the steps.
 
           Checksums are in \`SHA256SUMS.txt\`.
 
           For use with your own legal copy only. Do not share the extracted files. Contains code only, no game files.
           NOTES
           gh release create "${tag}" --repo "${GITHUB_REPOSITORY}" --target "${GITHUB_SHA}" \
-            --title "W3 Data Packer ${version}" --notes-file notes.md \
-            W3-DataPacker-* *-all.jar SHA256SUMS.txt
+            --title "Reforged Extractor toolkit ${version}" --notes-file notes.md \
+            Reforged-Extractor-* *-all.jar SHA256SUMS.txt

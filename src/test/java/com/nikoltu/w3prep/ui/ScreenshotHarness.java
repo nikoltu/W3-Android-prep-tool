@@ -31,19 +31,19 @@ public final class ScreenshotHarness {
 
 		shoot(out, "1-ready", 620, () -> {
 			final ReadyScreen ready = new ReadyScreen();
-			ready.showFound(install, "1.36.2.21230", "enUS");
+			ready.showFound(install, "3.0.1.24371", "enUS");
 			ready.setOutput(zip);
-			ready.setSummary("Full Classic · 21 627 files · 2.20 GB · about 1 min · 184 GB free on C:");
+			ready.setSummary("Full Classic · 21 181 files · 1.77 GB · about 1 min · 184 GB free on C:");
 			return ready;
 		}, null);
 		shoot(out, "1a-advanced", 980, () -> {
 			final ReadyScreen ready = new ReadyScreen();
-			ready.showFound(install, "1.36.2.21230", "enUS");
+			ready.showFound(install, "3.0.1.24371", "enUS");
 			ready.setOutput(zip);
-			ready.setSizes("2.20 GB", "1.79 GB", "+1.71 GB");
+			ready.setSizes("1.77 GB", "1.50 GB", "+1.00 GB");
 			ready.setSetAvailability(GraphicsSet.DE, true, "8.40 GB");
 			ready.setSetAvailability(GraphicsSet.HD, false, "");
-			ready.setSummary("Full Classic · 21 627 files · 2.20 GB · about 1 min · 184 GB free on C:");
+			ready.setSummary("Full Classic · 21 181 files · 1.77 GB · about 1 min · 184 GB free on C:");
 			ready.setAdvancedOpen(true);
 			return ready;
 		}, null);
@@ -53,10 +53,10 @@ public final class ScreenshotHarness {
 					"This folder has no .build.info. Pick the folder that contains Data and .build.info.", true);
 			return ready;
 		}, null);
-		final Progress progress = new Progress(2_362_232_012L, 21627, false);
+		final Progress progress = new Progress(1_900_000_000L, 21181, false);
 		progress.setPhase(Progress.Phase.COPY);
-		for (int i = 0; i < 11800; i++) {
-			progress.fileCopied(109_000);
+		for (int i = 0; i < 11600; i++) {
+			progress.fileCopied(88_000);
 		}
 		progress.setCurrentFile("war3.w3mod\\sound\\units\\human\\footman\\footmanyes2.ogg");
 		shoot(out, "2-working", 620, () -> {
@@ -77,7 +77,7 @@ public final class ScreenshotHarness {
 				}));
 		shoot(out, "3-done", 680, () -> {
 			final DoneScreen done = new DoneScreen(AppLog.open(false));
-			done.show(new Packer.Outcome(List.of(zip), List.of(), 21627, 2_362_232_012L, null, true));
+			done.show(new Packer.Outcome(List.of(zip), List.of(), 21181, 1_900_000_000L, null, true));
 			return done;
 		}, null);
 		shoot(out, "2b-failed", 620, () -> {
@@ -103,7 +103,7 @@ public final class ScreenshotHarness {
 			final After after) throws Exception {
 		final JFrame[] holder = new JFrame[1];
 		SwingUtilities.invokeAndWait(() -> {
-			final JFrame frame = new JFrame("W3 Data Packer");
+			final JFrame frame = new JFrame("Reforged Extractor toolkit");
 			final JPanel screen = builder.build();
 			final JPanel content = new JPanel(new java.awt.BorderLayout());
 			content.setBackground(Theme.GROUND);

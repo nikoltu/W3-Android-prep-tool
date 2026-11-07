@@ -18,7 +18,7 @@ public final class Launcher {
 		final boolean console = GraphicsEnvironment.isHeadless() || contains(args, "--cli");
 		final int version = parseJavaVersion(System.getProperty("java.specification.version", "0"));
 		if (version < REQUIRED_JAVA) {
-			report(console, "W3 Data Packer needs Java " + REQUIRED_JAVA + " or newer. This computer runs Java "
+			report(console, "Reforged Extractor toolkit needs Java " + REQUIRED_JAVA + " or newer. This computer runs Java "
 					+ System.getProperty("java.version") + ".\n\nDownload the package for your system instead. It "
 					+ "includes its own Java and needs nothing installed:\n" + RELEASES);
 			System.exit(1);
@@ -66,7 +66,7 @@ public final class Launcher {
 		for (int i = 0; (i < lines.length) && (i < 8); i++) {
 			shortTrace.append(lines[i]).append('\n');
 		}
-		report(console, "W3 Data Packer could not start.\n\n" + shortTrace
+		report(console, "Reforged Extractor toolkit could not start.\n\n" + shortTrace
 				+ "\nPlease report this text on the project page, or use the package for your system:\n" + RELEASES);
 		System.exit(1);
 	}
@@ -77,7 +77,7 @@ public final class Launcher {
 			return;
 		}
 		try {
-			JOptionPane.showMessageDialog(null, message, "W3 Data Packer", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null, message, "Reforged Extractor toolkit", JOptionPane.ERROR_MESSAGE);
 		} catch (final RuntimeException | LinkageError e) {
 			System.err.println(message);
 		}
