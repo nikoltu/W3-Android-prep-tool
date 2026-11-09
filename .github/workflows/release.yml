@@ -67,7 +67,7 @@ jobs:
           | Linux (x64) | \`Reforged-Extractor-${version}-linux-x64.tar.gz\` |
           | Any system with Java 17+ | \`reforged-extractor-${version}-all.jar\` |
 
-          The tool makes \`w3-data-classic.zip\` from your own game install. Copy it to the Android device, unpack it there, then choose the unpacked folder in Warsmash. See the README for the steps.
+          The tool makes \`w3-data-classic.zip\` from your own game install. Copy it to the Android device, then in Warsmash use Options › Game Data › Import ZIP and pick it; don't unpack it. See the README for the steps.
 
           Checksums are in \`SHA256SUMS.txt\`.
 

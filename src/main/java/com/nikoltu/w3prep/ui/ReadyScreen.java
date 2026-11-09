@@ -243,7 +243,8 @@ final class ReadyScreen extends JPanel {
 		row.setSize(available ? size : "–");
 		row.setDescription(available
 				? "Separate package " + set.getPackageName()
-						+ ". Unpack into the same folder; Warsmash takes from it only what Classic lacks."
+						+ ". Import ZIP does not take it: unpack it with Classic into one folder on the device. "
+						+ "Warsmash takes from it only what Classic lacks."
 				: "Not on this install.");
 	}
 

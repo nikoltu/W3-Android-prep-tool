@@ -58,14 +58,14 @@ final class DoneScreen extends JPanel {
 		this.stepsCard.add(Ui.heading("Put it on the Android device"));
 		addStep(1, "Connect the device by USB and choose File transfer.");
 		addStep(2, "Copy the ZIP into the device's Download folder.");
-		addStep(3, "Unpack it on the device with a file manager (Extract).");
-		addStep(4, "In Warsmash, choose the unpacked folder, the one with units and ui inside.");
+		addStep(3, "In Warsmash, open Options › Game Data, press Import ZIP and pick the ZIP.");
+		addStep(4, "When the import is done, you can delete the ZIP from Download.");
 		this.cards.setOpaque(false);
 		this.cards.add(this.stepsCard);
 		body.add(this.cards);
 
-		body.add(Ui.notice("Warsmash reads a folder, not the ZIP. Unpack on the device, not on the PC: one file copies "
-				+ "much faster than thousands.", Theme.WARN_BG, Theme.WARN));
+		body.add(Ui.notice("Don't unpack the ZIP, on the PC or on the device: Import ZIP unpacks and checks it by itself, "
+				+ "and one file copies much faster than thousands.", Theme.WARN_BG, Theme.WARN));
 
 		final JPanel spacer = new JPanel();
 		spacer.setOpaque(false);
@@ -81,10 +81,10 @@ final class DoneScreen extends JPanel {
 	private void addStep(final int number, final String text) {
 		final JPanel row = new JPanel(new BorderLayout(8, 0));
 		row.setOpaque(false);
-		final JLabel index = Ui.label(number + ".", Theme.bold(13f), number == 3 ? Theme.WARN : Theme.GOLD);
+		final JLabel index = Ui.label(number + ".", Theme.bold(13f), Theme.GOLD);
 		index.setVerticalAlignment(JLabel.TOP);
 		row.add(index, BorderLayout.WEST);
-		row.add(Ui.text(text, number == 3 ? Theme.WARN : Theme.SOFT), BorderLayout.CENTER);
+		row.add(Ui.text(text, Theme.SOFT), BorderLayout.CENTER);
 		this.stepsCard.add(row);
 	}
 
@@ -99,7 +99,8 @@ final class DoneScreen extends JPanel {
 			final String others = outcome.getPackages().subList(1, outcome.getPackages().size()).stream()
 					.map(path -> path.getFileName().toString()).collect(Collectors.joining(", "));
 			this.extras.add(Ui.text("Also made, in the same folder: " + others
-					+ ". Unpack each one into the same folder as Classic.", Theme.SOFT));
+					+ ". Import ZIP takes only the Classic package: to use them, unpack Classic and each set into one "
+					+ "folder on the device and choose it with Options › Game Data › Change…", Theme.SOFT));
 		}
 		if (outcome.getDesktopIni() != null) {
 			this.extras.add(Ui.text("Desktop build: plain folder and " + outcome.getDesktopIni().getFileName()

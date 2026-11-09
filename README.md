@@ -33,8 +33,7 @@ flowchart LR
     B --> C["w3-data-classic.zip<br/>one file, checked"]
     B --> G["w3-data-classic/<br/>+ warsmash-data.ini<br/>(desktop, optional)"]
     C -- "USB or ADB" --> D["Android device<br/>Download folder"]
-    D -- "unpack" --> E["w3-data-classic/<br/>units, ui, …"]
-    E -- "choose folder" --> F["Warsmash"]
+    D -- "Import ZIP" --> F["Warsmash"]
 ```
 
 | | |
@@ -113,34 +112,26 @@ Press **Create Android package**. After a minute or two `w3-data-classic.zip` is
 - **ADB** (only if you already use it): press **Send to device** in the tool, or run
   `adb push w3-data-classic.zip /sdcard/Download/`
 
-### 4. Unpack it on the device
+### 4. Import it in Warsmash
 
 > [!IMPORTANT]
-> **Warsmash reads game files from a folder, not from the ZIP. The ZIP must be unpacked on the device.**
-> Copy the ZIP itself; don't unpack it on the PC and copy the folder.
+> **Don't unpack the ZIP, neither on the PC nor on the device.** Warsmash imports the ZIP itself: it unpacks it into
+> its own app folder and checks every file. One file also copies much faster than thousands.
 
-1. Open a file manager on the device, for example Files by Google.
-2. Go to **Download**, tap `w3-data-classic.zip`, choose **Extract**.
-3. You get a folder `w3-data-classic` with `units` and `ui` inside. This needs about 2.1 GB of extra free space
-   (3.1 GB with movies).
+1. Open Warsmash. On the **Game data** screen it shows at first start (later: Options › Game Data) press
+   **Import ZIP**.
+2. Pick `w3-data-classic.zip` in **Download**.
+3. Wait until the import is done. It needs about 2.1 GB of extra free space (3.1 GB with movies). Warsmash then
+   shows the game version from the package.
 
-> [!WARNING]
-> Don't make the folder with `adb shell mkdir` or `adb push` a folder into Warsmash's own app folder
-> (`Android/data/…`): files put there by adb or by another app belong to that user and are usually closed to
-> Warsmash, so the folder looks empty or files are reported missing. Unpack with a file manager on the device into
-> a folder such as `Download`, as above.
+When the import is done, you can delete the ZIP.
 
 > [!NOTE]
 > The package contains a `.nomedia` file, so game sounds and pictures don't show up in your music or gallery apps.
 
-### 5. Point Warsmash at the folder
-
-Open Warsmash. On the **Game data** screen (later: Options › Game Data › Change…) choose `w3-data-classic`, or
-the folder above it. When Warsmash asks for **All files access**, allow it: it needs it to read a folder outside its
-own app folder. Warsmash shows the game version from the package. When it starts, you can delete the ZIP.
-
 > [!TIP]
-> After a game update, run the tool again, copy and unpack the new ZIP, and point Warsmash at the new folder.
+> After a game update, run the tool again, copy the new ZIP to the device and import it the same way. It replaces
+> the old data; until the new import is done, the old data stays as it was.
 
 ## Desktop Warsmash
 
@@ -165,7 +156,7 @@ folder. The tool replaces only a folder it made itself.
 | --- | --- |
 | **Melee only** | Leaves out the campaign maps, campaign assets, their spoken lines and mission pictures. |
 | **Include movies** | Adds the campaign opening and ending movies, 1920 pixels wide, with sound and captions. Warsmash plays them on Android. |
-| **Graphics sets** *(experimental)* | DE and HD sets, each as its own ZIP (`w3-data-set-de.zip`, `w3-data-set-hd.zip`). Unpack into the same folder as Classic; the files go into their own subfolder and don't overwrite Classic. Warsmash takes from them only models and textures that Classic lacks. |
+| **Graphics sets** *(experimental)* | DE and HD sets, each as its own ZIP (`w3-data-set-de.zip`, `w3-data-set-hd.zip`). Import ZIP takes only the Classic package: to use a set, unpack Classic and the set into one folder on the device with a file manager and choose that folder with Options › Game Data › Change…; the set's files go into their own subfolder and don't overwrite Classic. Warsmash takes from them only models and textures that Classic lacks. |
 | **Desktop build** | See above. |
 
 Next to each ZIP the tool writes a `.manifest.json` with every file's size and checksums. It stays on the PC.
@@ -182,9 +173,12 @@ Next to each ZIP the tool writes a `.manifest.json` with every file's size and c
 | Files could not be read | Let the game launcher finish updating, or run its Scan and Repair, then try again. |
 | The game was updated while packing | Let the update finish, then press **Try again**. |
 | Not enough space | Choose another place for the package, or free some space. |
-| **Extract** fails on the device | Check free space; copy the ZIP again. |
-| Warsmash says the folder is not valid | Pick the folder that directly contains `units` and `ui`. |
-| Warsmash shows no exact game version | The folder was made before version 0.2.0 of this tool; make it again. |
+| Warsmash: not a ZIP file, incomplete, or does not match its checksum | The copy is damaged. Copy the ZIP to the device again and import it again. |
+| Warsmash: not enough free space | Free the space it names on the device, then import again. |
+| Warsmash: not a Reforged Extractor toolkit package | A graphics set ZIP or another ZIP was picked. Import `w3-data-classic.zip`. |
+| Warsmash: the ZIP cannot be read where it lies | Copy it to the device storage, such as **Download**, and pick it there. |
+| Warsmash says a chosen folder is not valid (Change…) | Pick the folder that directly contains `units` and `ui`. |
+| Warsmash shows no exact game version | The package was made before version 0.2.0 of this tool; make it again. |
 
 **Log folder** in the tool opens the logs. Your user folder shows as `~` in them, so a log can be shared for help.
 Settings and logs are kept in `Reforged-Extractor` in your user's application data folder.
