@@ -85,8 +85,9 @@ public final class PackPlanner {
 	/**
 	 * Files of the graphics packages (_de.w3mod, _hd.w3mod) that the Classic data names and the Classic layers do not
 	 * have: the engine shows Classic graphics but looks a file up in the packages when the Classic layers lack it, as
-	 * the game does. The list is what the melee data, the Classic campaign maps and the Classic models resolve to;
-	 * the skin rows of objects only the Reforged campaigns use are left out.
+	 * the game does. The list is what the Classic skin fields (not the ":hd" ones), the Classic campaign maps and the
+	 * Classic models resolve to, and the Reforged cinematic panel art; the textures and spawned models of the listed
+	 * models are found by reading them.
 	 */
 	static final String CLASSIC_FALLBACK = "/extractor/classic-fallback.txt";
 	/**
@@ -95,20 +96,37 @@ public final class PackPlanner {
 	 * its graphics reach there, under the same paths, and the folder needs no second set.
 	 */
 	private static final String SET_EXTRA = "/extractor/set-%s-extra.txt";
+	/** The graphics packages in the order the engine looks a missing file up in them. */
+	private static final String[] GRAPHICS_PACKAGES = { "_de.w3mod", "_hd.w3mod" };
+	private static final Set<String> TEXTURE_EXTENSIONS = new HashSet<>(Arrays.asList("blp", "dds", "tga", "tif"));
+	private static final String DIFFUSE_SUFFIX = "_diffuse";
 
 	private final List<StorageEntry> entries;
 	private final String gameVersion;
 	private final String locale;
 	private final String[] classicLayers;
 	private final String[] classicLayerNames;
+	private final GameStorage storage;
+	/** The files each package model names, read once for all plans. */
+	private final Map<String, List<String>> modelReferences = new HashMap<>();
+	private Map<String, StorageEntry> packageEntries;
 
 	public PackPlanner(final List<StorageEntry> entries) {
-		this(entries, null);
+		this(entries, null, null);
 	}
 
 	public PackPlanner(final List<StorageEntry> entries, final String gameVersion) {
+		this(entries, gameVersion, null);
+	}
+
+	/**
+	 * @param storage reads the package models of the Classic package, whose textures and spawned models it then
+	 *                carries too; null to take only the listed files
+	 */
+	public PackPlanner(final List<StorageEntry> entries, final String gameVersion, final GameStorage storage) {
 		this.entries = entries;
 		this.gameVersion = gameVersion;
+		this.storage = storage;
 		this.locale = pickLocale(entries);
 		this.classicLayers = new String[] { ROOT, ROOT + "\\_deprecated.w3mod",
 				ROOT + "\\_locales\\" + this.locale + ".w3mod" };
@@ -187,7 +205,7 @@ public final class PackPlanner {
 		dropLosingAudio(winner, winnerLayer);
 
 		final List<PlanEntry> planEntries = new ArrayList<>(winner.size());
-		addClassicFallback(planEntries, options, skipped);
+		addClassicFallback(planEntries, options, skipped, winner.keySet());
 		boolean hasUnits = false;
 		boolean hasUi = false;
 		for (final Map.Entry<String, StorageEntry> file : winner.entrySet()) {
@@ -211,20 +229,25 @@ public final class PackPlanner {
 	}
 
 	private void addClassicFallback(final List<PlanEntry> planEntries, final PackOptions options,
-			final List<String> skipped) {
+			final List<String> skipped, final Set<String> classicFiles) {
 		final Set<String> wanted = classicFallback();
 		if (wanted.isEmpty()) {
 			return;
 		}
-		for (final StorageEntry entry : this.entries) {
-			final String path = normalize(entry.getPath());
-			if (!path.startsWith(ROOT + "\\")) {
+		final Map<String, StorageEntry> packaged = packageEntries();
+		final Set<String> taken = new HashSet<>();
+		final List<String> queue = new ArrayList<>();
+		for (final String relative : wanted) {
+			if (packaged.containsKey(relative)) {
+				queue.add(relative);
+			}
+		}
+		while (!queue.isEmpty()) {
+			final String relative = queue.remove(queue.size() - 1);
+			if (!taken.add(relative)) {
 				continue;
 			}
-			final String relative = path.substring(ROOT.length() + 1);
-			if (!wanted.contains(relative)) {
-				continue;
-			}
+			final StorageEntry entry = packaged.get(relative);
 			final int slash = relative.indexOf('\\');
 			if (isExcluded(relative.substring(slash + 1), options, this.locale)) {
 				continue;
@@ -235,7 +258,100 @@ public final class PackPlanner {
 			}
 			planEntries.add(new PlanEntry(relative.replace('\\', '/'), entry.getPath(), relative.substring(0, slash),
 					entry.getSize()));
+			for (final String reference : referencesOf(relative, entry)) {
+				final String found = findInPackages(reference, classicFiles, packaged);
+				if ((found != null) && !taken.contains(found)) {
+					queue.add(found);
+				}
+			}
 		}
+	}
+
+	/** The package files below war3.w3mod by their normalized path, without the packages' language folders. */
+	private Map<String, StorageEntry> packageEntries() {
+		if (this.packageEntries == null) {
+			this.packageEntries = new HashMap<>();
+			for (final StorageEntry entry : this.entries) {
+				final String path = normalize(entry.getPath());
+				if (!path.startsWith(ROOT + "\\")) {
+					continue;
+				}
+				final String relative = path.substring(ROOT.length() + 1);
+				for (final String graphicsPackage : GRAPHICS_PACKAGES) {
+					if (relative.startsWith(graphicsPackage + "\\")
+							&& !isSubMod(firstSegment(relative.substring(graphicsPackage.length() + 1)))) {
+						this.packageEntries.put(relative, entry);
+					}
+				}
+			}
+		}
+		return this.packageEntries;
+	}
+
+	private List<String> referencesOf(final String relative, final StorageEntry entry) {
+		if ((this.storage == null) || !relative.endsWith(".mdx")) {
+			return Collections.emptyList();
+		}
+		return this.modelReferences.computeIfAbsent(relative, key -> {
+			try {
+				return ModelReferences.of(this.storage.read(entry.getPath()));
+			}
+			catch (final IOException | RuntimeException e) {
+				// The model itself is read again when packing, which reports the failure.
+				return Collections.emptyList();
+			}
+		});
+	}
+
+	/**
+	 * The package file the engine shows for a name a package model gives, as it looks the name up in Classic
+	 * graphics: the Classic files first, then the packages in order, a texture also as .dds and as the "_diffuse"
+	 * .dds of the new materials (the HD materials name .tif files that the data keeps as .dds). Null when the Classic
+	 * files have it or no package does.
+	 */
+	static String findInPackages(final String reference, final Set<String> classicFiles,
+			final Map<String, StorageEntry> packaged) {
+		final List<String> names = referenceNames(normalize(reference.trim()));
+		for (final String name : names) {
+			if (classicFiles.contains(name)) {
+				return null;
+			}
+		}
+		for (final String graphicsPackage : GRAPHICS_PACKAGES) {
+			for (final String name : names) {
+				final String path = graphicsPackage + "\\" + name;
+				if (packaged.containsKey(path)) {
+					return path;
+				}
+			}
+		}
+		return null;
+	}
+
+	private static List<String> referenceNames(final String path) {
+		String name = path;
+		while (name.startsWith("\\")) {
+			name = name.substring(1);
+		}
+		final String extension = extension(name);
+		final String base = name.substring(0, name.length() - extension.length() - (extension.isEmpty() ? 0 : 1));
+		if (extension.equals("mdl")) {
+			return Collections.singletonList(base + ".mdx");
+		}
+		if (!TEXTURE_EXTENSIONS.contains(extension)) {
+			return Collections.singletonList(name);
+		}
+		final List<String> names = new ArrayList<>(3);
+		if (!extension.equals("tif")) {
+			names.add(name);
+		}
+		if (!extension.equals("dds")) {
+			names.add(base + ".dds");
+		}
+		if (!base.endsWith(DIFFUSE_SUFFIX)) {
+			names.add(base + DIFFUSE_SUFFIX + ".dds");
+		}
+		return names;
 	}
 
 	static Set<String> classicFallback() {

@@ -18,7 +18,7 @@ public final class Analysis implements AutoCloseable {
 	public Analysis(final Path install, final GameStorage storage) throws IOException {
 		this.install = install;
 		this.storage = storage;
-		this.planner = new PackPlanner(storage.listEntries(), storage.getVersion());
+		this.planner = new PackPlanner(storage.listEntries(), storage.getVersion(), storage);
 		for (final GraphicsSet set : GraphicsSet.values()) {
 			this.setPlans.put(set, this.planner.planSet(set));
 		}

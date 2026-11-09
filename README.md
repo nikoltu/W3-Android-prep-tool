@@ -24,7 +24,7 @@
 
 Warsmash reads the Classic game files from a folder. Those files only exist inside your own installed copy of
 Warcraft III (1.32 or newer, the Reforged storage). This tool takes out exactly the files Warsmash reads, about
-1.8 GB, and packs them into **one ZIP file** for an Android device. For the desktop build of Warsmash it can also
+2.1 GB, and packs them into **one ZIP file** for an Android device. For the desktop build of Warsmash it can also
 write them as a plain folder.
 
 ```mermaid
@@ -53,7 +53,8 @@ flowchart LR
 | --- | --- | --- |
 | Classic game data: units, doodads, interface, sound, music, maps, scripts | ~1.5 GB | The game itself. |
 | Classic campaigns and their spoken lines | ~0.15 GB | Left out with **Melee only**. |
-| `_de.w3mod/`: the few files Classic graphics take from the DE set (weather and blood effects, cinematic heroes, a bridge texture) | ~0.05 GB | Classic data names them, and the Classic files don't have them. |
+| `_de.w3mod/`: the files Classic graphics take from the DE set (weather and blood effects, cinematic heroes, items and effects of newer abilities, bridge textures) with the textures those models name | ~0.37 GB | Classic data names them, and the Classic files don't have them. |
+| `_hd.w3mod/ui/`: the Reforged cinematic portrait frame | tiny | The Reforged look of cinematics. |
 | `webui/`: menu and campaign scenes (Classic `_sd` and Reforged `.webm`), Reforged interface art, portraits, loading screens | ~0.27 GB | The launcher's animated backgrounds, its Reforged look and the Reforged loading screen. |
 | `movies/` *(optional)* | ~1.0 GB | Campaign opening and ending movies in one width, with their sound and captions. |
 | `w3-datapacker.txt` | tiny | Written last. Names the tool, the **game version** and the language, which Warsmash shows; a folder without it was not fully unpacked. |
@@ -120,8 +121,8 @@ Press **Create Android package**. After a minute or two `w3-data-classic.zip` is
 
 1. Open a file manager on the device, for example Files by Google.
 2. Go to **Download**, tap `w3-data-classic.zip`, choose **Extract**.
-3. You get a folder `w3-data-classic` with `units` and `ui` inside. This needs about 1.8 GB of extra free space
-   (2.8 GB with movies).
+3. You get a folder `w3-data-classic` with `units` and `ui` inside. This needs about 2.1 GB of extra free space
+   (3.1 GB with movies).
 
 > [!WARNING]
 > Don't make the folder with `adb shell mkdir` or `adb push` a folder into Warsmash's own app folder

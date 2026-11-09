@@ -196,7 +196,8 @@ public final class Cli {
 				for (final Path packageFile : outcome.getPackages()) {
 					log.info("  " + packageFile);
 				}
-				log.info("Copy the ZIP to the Android device, unpack it there, then choose the unpacked folder in Warsmash.");
+				log.info("Copy the ZIP to the Android device, then in Warsmash use Options > Game Data > Import ZIP "
+						+ "and pick it; no need to unpack it.");
 				if (send) {
 					return send(outcome.getPackages().get(0), log);
 				}
@@ -230,7 +231,7 @@ public final class Cli {
 			log.info(Adb.pushCommand(packageFile) + " → " + ready.get(0).getName());
 			adb.push(ready.get(0), packageFile, bytes -> {
 			});
-			log.info("sent. Unpack it on the device, then choose the unpacked folder in Warsmash.");
+			log.info("sent. In Warsmash use Options > Game Data > Import ZIP and pick it.");
 			return 0;
 		} catch (final IOException e) {
 			log.info("adb: " + e.getMessage());

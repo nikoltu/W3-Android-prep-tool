@@ -331,4 +331,47 @@ class PackPlannerTest {
 		assertFalse(de.containsKey("_hd.w3mod/units/a.mdx"));
 		assertTrue(PackPlanner.setExtra(GraphicsSet.HD).size() > 200);
 	}
+
+	@Test
+	void classicFallbackCarriesWhatItsModelsName() throws Exception {
+		final String folder = "war3.w3mod\\_de.w3mod\\environment\\weather\\";
+		final FakeStorage storage = FakeStorage.classic()
+				.add(folder + "rainheavy.mdx",
+						ModelReferencesTest.model(List.of("Environment\\Weather\\Rain_Diffuse.tif",
+								"Textures\\Black32.blp", "Textures\\Clouds8x8.blp", "Textures\\Gone.blp"),
+								List.of("Environment\\Weather\\RainSplash.mdl")))
+				.add(folder + "rain_diffuse.dds", "texture").add(folder + "rainsplash.mdx",
+						ModelReferencesTest.model(List.of("Environment\\Weather\\Splash.tga"), List.of()))
+				.add(folder + "splash_diffuse.dds", "splash")
+				.add("war3.w3mod\\_hd.w3mod\\textures\\clouds8x8.dds", "hd")
+				.add("war3.w3mod\\_hd.w3mod\\environment\\weather\\rain_diffuse.dds", "hd")
+				.add("war3.w3mod\\textures\\black32.blp", "classic")
+				.add("war3.w3mod\\_de.w3mod\\environment\\weather\\unnamed.dds", "not named");
+		final Map<String, PlanEntry> plan = byPath(new PackPlanner(storage.listEntries(), null, storage)
+				.planClassic(PackOptions.defaults()));
+		assertTrue(plan.containsKey("_de.w3mod/environment/weather/rainheavy.mdx"));
+		assertTrue(plan.containsKey("_de.w3mod/environment/weather/rain_diffuse.dds"));
+		assertTrue(plan.containsKey("_de.w3mod/environment/weather/rainsplash.mdx"));
+		assertTrue(plan.containsKey("_de.w3mod/environment/weather/splash_diffuse.dds"));
+		assertEquals("_hd.w3mod", plan.get("_hd.w3mod/textures/clouds8x8.dds").getLayer());
+		assertFalse(plan.containsKey("_hd.w3mod/environment/weather/rain_diffuse.dds"));
+		assertFalse(plan.containsKey("_de.w3mod/environment/weather/unnamed.dds"));
+		assertTrue(plan.containsKey("textures/black32.blp"));
+		assertFalse(plan.keySet().stream().anyMatch(path -> path.contains("black32") && path.startsWith("_")));
+
+		final Map<String, PlanEntry> listedOnly = byPath(classic(storage, PackOptions.defaults()));
+		assertTrue(listedOnly.containsKey("_de.w3mod/environment/weather/rainheavy.mdx"));
+		assertFalse(listedOnly.containsKey("_de.w3mod/environment/weather/rain_diffuse.dds"));
+	}
+
+	@Test
+	void classicFallbackHasTheReforgedCinematicPanel() {
+		final java.util.Set<String> listed = PackPlanner.classicFallback();
+		for (final String race : List.of("human", "orc", "nightelf", "undead")) {
+			final String border = race + "\\" + race + "-cinematic-border.dds";
+			assertTrue(listed.contains("_hd.w3mod\\ui\\widgets\\escmenu\\" + border));
+		}
+		assertTrue(listed.contains("_hd.w3mod\\ui\\widgets\\escmenu\\default\\cinematic-panel-background.dds"));
+		assertTrue(listed.contains("_de.w3mod\\abilities\\spells\\other\\spikedshell\\spikedshelltargetchestleft.mdx"));
+	}
 }
