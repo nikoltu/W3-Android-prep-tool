@@ -156,7 +156,7 @@ folder. The tool replaces only a folder it made itself.
 | --- | --- |
 | **Melee only** | Leaves out the campaign maps, campaign assets, their spoken lines and mission pictures. |
 | **Include movies** | Adds the campaign opening and ending movies, 1920 pixels wide, with sound and captions. Warsmash plays them on Android. |
-| **Graphics sets** *(experimental)* | DE and HD sets, each as its own ZIP (`w3-data-set-de.zip`, `w3-data-set-hd.zip`). Import ZIP takes only the Classic package: to use a set, unpack Classic and the set into one folder on the device with a file manager and choose that folder with Options › Game Data › Change…; the set's files go into their own subfolder and don't overwrite Classic. Warsmash takes from them only models and textures that Classic lacks. |
+| **Graphics sets** *(experimental)* | DE and HD sets, each as its own ZIP (`w3-data-set-de.zip`, `w3-data-set-hd.zip`). Import the Classic package first, then the set's ZIP with Import ZIP too: Warsmash adds the set next to Classic, and a later Classic import keeps it. The set's files go into their own subfolder and don't overwrite Classic. Warsmash takes from them only models and textures that Classic lacks. |
 | **Desktop build** | See above. |
 
 Next to each ZIP the tool writes a `.manifest.json` with every file's size and checksums. It stays on the PC.
@@ -175,7 +175,8 @@ Next to each ZIP the tool writes a `.manifest.json` with every file's size and c
 | Not enough space | Choose another place for the package, or free some space. |
 | Warsmash: not a ZIP file, incomplete, or does not match its checksum | The copy is damaged. Copy the ZIP to the device again and import it again. |
 | Warsmash: not enough free space | Free the space it names on the device, then import again. |
-| Warsmash: not a Reforged Extractor toolkit package | A graphics set ZIP or another ZIP was picked. Import `w3-data-classic.zip`. |
+| Warsmash: not a Reforged Extractor toolkit package | A ZIP not made by this toolkit was picked. Import `w3-data-classic.zip`. |
+| Warsmash: graphics set, import Classic first | A set ZIP was imported before Classic. Import `w3-data-classic.zip`, then the set. |
 | Warsmash: the ZIP cannot be read where it lies | Copy it to the device storage, such as **Download**, and pick it there. |
 | Warsmash says a chosen folder is not valid (Change…) | Pick the folder that directly contains `units` and `ui`. |
 | Warsmash shows no exact game version | The package was made before version 0.2.0 of this tool; make it again. |

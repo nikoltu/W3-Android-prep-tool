@@ -99,8 +99,7 @@ final class DoneScreen extends JPanel {
 			final String others = outcome.getPackages().subList(1, outcome.getPackages().size()).stream()
 					.map(path -> path.getFileName().toString()).collect(Collectors.joining(", "));
 			this.extras.add(Ui.text("Also made, in the same folder: " + others
-					+ ". Import ZIP takes only the Classic package: to use them, unpack Classic and each set into one "
-					+ "folder on the device and choose it with Options › Game Data › Change…", Theme.SOFT));
+					+ ". Import them with Import ZIP too, after the Classic package; Warsmash adds them next to Classic.", Theme.SOFT));
 		}
 		if (outcome.getDesktopIni() != null) {
 			this.extras.add(Ui.text("Desktop build: plain folder and " + outcome.getDesktopIni().getFileName()
